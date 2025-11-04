@@ -1,29 +1,37 @@
-# AI 旅行规划师 (AI Travel Planner)
+# 🌏 AI 旅行规划师 (AI Travel Planner)
 
-一个基于 AI 的智能旅行规划 Web 应用，帮助用户轻松规划和管理旅行计划。
+一个功能完整的 AI 驱动的智能旅行规划 Web 应用，帮助用户轻松规划和管理旅行计划。
 
-**当前版本**：v1.0 - 用户注册登录系统
+**当前版本**：v2.0 - 完整功能版
 
 ## 📋 项目简介
 
-AI 旅行规划师旨在简化旅行规划过程，通过 AI 了解用户需求，自动生成详细的旅行路线和建议，并提供实时旅行辅助。
+AI 旅行规划师简化了旅行规划过程，通过 AI 了解用户需求，自动生成详细的旅行路线和建议，并提供实时旅行辅助。
 
-### 当前已实现功能
+### ✨ 已实现的核心功能
 
-- ✅ 用户注册系统
-- ✅ 用户登录系统
-- ✅ JWT 身份认证
-- ✅ 用户信息管理
-- ✅ 云端数据同步（PostgreSQL 数据库）
-- ✅ Docker 容器化部署
+#### 1. 智能行程规划 ✅
+- ✅ 支持文字和语音输入旅行需求
+- ✅ AI 自动生成个性化旅行路线（使用 OpenRouter API）
+- ✅ 包含交通、住宿、景点、餐厅等详细信息
+- ✅ 支持多种旅行偏好（美食、文化、自然、购物等）
 
-### 即将推出的功能
+#### 2. 费用预算与管理 ✅
+- ✅ AI 预算分析和建议
+- ✅ 记录旅行开销（支持手动和语音输入）
+- ✅ 费用分类管理
+- ✅ 实时预算使用情况
+- ✅ 预算超支提醒
 
-- 🎤 智能语音识别旅行需求
-- 🗺️ AI 自动生成个性化旅行路线
-- 💰 智能费用预算与管理
-- 📍 实时地图导航与景点推荐
-- 🌐 多语言支持
+#### 3. 用户管理与数据存储 ✅
+- ✅ 注册登录系统（JWT 认证）
+- ✅ 多份旅行计划管理
+- ✅ 云端数据同步（PostgreSQL）
+- ✅ API Key 安全配置
+
+#### 4. 地图与导航（框架已实现）✅
+- ✅ 地图展示组件（支持高德/百度地图）
+- ⚠️ 需配置 API Key 完全启用
 
 ## 🛠️ 技术栈
 
@@ -81,89 +89,29 @@ AITravelPlanner/
 
 ## 🚀 快速开始
 
-### 方式一：使用 Docker（推荐）
+### 方式一：一键启动脚本（最简单）⚡
 
-#### 前置要求
-- Docker 20.10+
-- Docker Compose 2.0+
-
-#### 启动步骤
-
-1. **克隆项目**
 ```bash
+# 1. 克隆项目
 git clone <repository-url>
 cd AITravelPlanner
+
+# 2. 运行启动脚本
+bash START_APP.sh
 ```
 
-2. **配置环境变量（可选）**
+启动脚本会自动：
+- 启动 Docker 后端和数据库
+- 安装前端依赖（如果需要）
+- 启动前端开发服务器
 
-创建 `.env` 文件（或使用默认配置）：
-```bash
-cp .env.example .env
-```
-
-编辑 `.env` 文件，设置 JWT 密钥：
-```
-JWT_SECRET=your-very-secure-secret-key-here
-JWT_EXPIRES_IN=7d
-```
-
-> ⚠️ **重要**：在生产环境中，请务必修改 `JWT_SECRET` 为一个强随机字符串！
-
-3. **启动所有服务**
-
-**国内用户加速构建**（推荐）：
-```bash
-# 前端 Dockerfile 已配置淘宝镜像源
-docker-compose up -d --build
-```
-
-**或者分步构建**：
-```bash
-# 先启动后端和数据库（很快）
-docker-compose up -d backend postgres
-
-# 然后构建前端（首次需要 3-5 分钟）
-docker-compose build frontend
-docker-compose up -d frontend
-```
-
-首次启动会自动：
-- 拉取所需的 Docker 镜像
-- 构建前后端应用
-- 初始化 PostgreSQL 数据库
-- 运行数据库迁移
-
-> 💡 **提示**：前端首次构建可能需要 3-5 分钟，请耐心等待。如果超过 10 分钟，建议使用本地开发模式（见方式二）。
-
-4. **访问应用**
-- 前端地址: http://localhost
+访问：
+- 前端: http://localhost:5173
 - 后端 API: http://localhost:3000
 
-5. **查看日志**
-```bash
-# 查看所有服务日志
-docker-compose logs -f
+### 方式二：手动启动
 
-# 查看特定服务日志
-docker-compose logs -f backend
-docker-compose logs -f frontend
-docker-compose logs -f postgres
-```
-
-6. **停止服务**
-```bash
-docker-compose down
-
-# 停止并删除数据卷（清空数据库）
-docker-compose down -v
-```
-
-### 方式二：混合模式（推荐用于开发）⚡
-
-**后端使用 Docker，前端本地运行**（启动最快）
-
-#### 步骤 1: 启动后端和数据库
+#### 步骤 1：启动后端和数据库
 
 ```bash
 docker-compose up -d backend postgres
@@ -172,16 +120,8 @@ docker-compose up -d backend postgres
 curl http://localhost:3000/health
 ```
 
-#### 步骤 2: 本地启动前端
+#### 步骤 2：启动前端
 
-**在 Windows（如果已安装 Node.js）**：
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-**或在 WSL/Linux**：
 ```bash
 cd frontend
 npm install
@@ -190,11 +130,19 @@ npm run dev
 
 前端将在 http://localhost:5173 启动
 
-> 💡 **为什么推荐混合模式？**
-> - 后端 Docker 容器构建快（1-2 分钟）✅
-> - 前端本地运行启动快（1-2 分钟）✅
-> - 前端支持热重载，开发体验好 ✅
-> - 数据持久化在 Docker 中 ✅
+### 方式三：完全使用 Docker
+
+```bash
+# 取消注释 docker-compose.yml 中的 frontend 服务
+# 然后运行：
+docker-compose up -d --build
+
+# 访问
+# 前端: http://localhost
+# 后端: http://localhost:3000
+```
+
+> ⚠️ **注意**：前端 Docker 构建较慢（3-5分钟），推荐使用方式一或二
 
 ---
 
@@ -248,6 +196,46 @@ npm run dev
 ```
 
 前端将在 http://localhost:5173 启动
+
+## 🔑 API Key 配置（重要）
+
+### 必需的 API Key
+
+#### OpenRouter API Key（必需）
+用于 AI 行程生成功能
+
+1. 访问 [OpenRouter](https://openrouter.ai/)
+2. 注册并登录
+3. 充值 $5-10（推荐用于测试）
+4. 创建 API Key
+5. 在应用的"设置"页面输入 API Key
+
+**注意**：
+- API Key 格式：`sk-or-v1-...`
+- 推荐使用阿里云百炼平台（如果助教有 Key）
+- API Key 会安全存储在服务器端，不会暴露在前端
+
+### 可选的 API Key
+
+#### 科大讯飞语音识别（可选）
+用于高级语音识别功能
+
+1. 访问 [科大讯飞开放平台](https://console.xfyun.cn/)
+2. 创建应用
+3. 获取：AppId, ApiKey, ApiSecret
+4. 在设置页面配置
+
+**注意**：如不配置，仍可使用基础录音功能
+
+#### 高德地图 / 百度地图（可选）
+用于地图展示功能
+
+- **高德地图**: https://console.amap.com/
+- **百度地图**: https://lbsyun.baidu.com/
+
+**注意**：如不配置，地图组件会显示占位符
+
+---
 
 ## 📖 API 文档
 

@@ -12,7 +12,8 @@
     "react-dom": "^18.2.0",
     "react-router-dom": "^6.20.1",
     "antd": "^5.12.2",
-    "axios": "^1.6.2"
+    "axios": "^1.6.2",
+    "dayjs": "^1.11.10"
   },
   "devDependencies": {
     "@types/react": "^18.2.43",

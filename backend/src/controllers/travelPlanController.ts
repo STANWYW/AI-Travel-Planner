@@ -169,15 +169,35 @@ export const generateItinerary = async (
       return;
     }
 
-    // 这里将调用 OpenRouter API 生成行程
-    // 实现在下一步
-    res.json({
-      message: '行程生成功能将在集成 OpenRouter API 后可用',
-      travelPlanId: id,
+    // 调用 OpenRouter API 生成行程
+    const { generateTravelItinerary } = await import('../services/openrouterService');
+    
+    const itinerary = await generateTravelItinerary(req.userId!, {
+      destination: travelPlan.destination,
+      days: travelPlan.days,
+      budget: travelPlan.budget,
+      travelers: travelPlan.travelers,
+      preferences: travelPlan.preferences,
     });
-  } catch (error) {
+
+    // 更新旅行计划
+    const updated = await prisma.travelPlan.update({
+      where: { id },
+      data: {
+        itinerary,
+        status: 'confirmed',
+      },
+    });
+
+    res.json({
+      message: '行程生成成功',
+      travelPlan: updated,
+    });
+  } catch (error: any) {
     console.error('生成行程错误:', error);
-    res.status(500).json({ error: '服务器错误' });
+    res.status(500).json({
+      error: error.message || '生成行程失败，请检查 OpenRouter API Key 配置',
+    });
   }
 };
 
