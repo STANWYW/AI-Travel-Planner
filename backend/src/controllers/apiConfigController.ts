@@ -1,29 +1,9 @@
 import { Response } from 'express';
 import prisma from '../config/database';
 import { AuthRequest } from '../middleware/auth';
-import crypto from 'crypto';
 
-// 简单的加密/解密（生产环境应使用更安全的方案）
-const ENCRYPTION_KEY = process.env.ENCRYPTION_KEY || 'your-32-char-secret-key-here!!';
-const ALGORITHM = 'aes-256-cbc';
-
-function encrypt(text: string): string {
-  const iv = crypto.randomBytes(16);
-  const cipher = crypto.createCipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY.slice(0, 32)), iv);
-  let encrypted = cipher.update(text);
-  encrypted = Buffer.concat([encrypted, cipher.final()]);
-  return iv.toString('hex') + ':' + encrypted.toString('hex');
-}
-
-function decrypt(text: string): string {
-  const parts = text.split(':');
-  const iv = Buffer.from(parts.shift()!, 'hex');
-  const encryptedText = Buffer.from(parts.join(':'), 'hex');
-  const decipher = crypto.createDecipheriv(ALGORITHM, Buffer.from(ENCRYPTION_KEY.slice(0, 32)), iv);
-  let decrypted = decipher.update(encryptedText);
-  decrypted = Buffer.concat([decrypted, decipher.final()]);
-  return decrypted.toString();
-}
+// 注意：演示版本暂不加密存储
+// 生产环境应使用加密或外部密钥管理服务（如 AWS Secrets Manager, HashiCorp Vault）
 
 export const getApiConfig = async (
   req: AuthRequest,
@@ -75,21 +55,21 @@ export const updateApiConfig = async (
       baiduMapKey,
     } = req.body;
 
-    // 加密存储
-    const encryptedData: any = {};
-    if (openrouterKey) encryptedData.openrouterKey = encrypt(openrouterKey);
-    if (xfyunAppId) encryptedData.xfyunAppId = encrypt(xfyunAppId);
-    if (xfyunApiKey) encryptedData.xfyunApiKey = encrypt(xfyunApiKey);
-    if (xfyunApiSecret) encryptedData.xfyunApiSecret = encrypt(xfyunApiSecret);
-    if (amapKey) encryptedData.amapKey = encrypt(amapKey);
-    if (baiduMapKey) encryptedData.baiduMapKey = encrypt(baiduMapKey);
+    // 直接存储（演示版本）
+    const updateData: any = {};
+    if (openrouterKey !== undefined) updateData.openrouterKey = openrouterKey;
+    if (xfyunAppId !== undefined) updateData.xfyunAppId = xfyunAppId;
+    if (xfyunApiKey !== undefined) updateData.xfyunApiKey = xfyunApiKey;
+    if (xfyunApiSecret !== undefined) updateData.xfyunApiSecret = xfyunApiSecret;
+    if (amapKey !== undefined) updateData.amapKey = amapKey;
+    if (baiduMapKey !== undefined) updateData.baiduMapKey = baiduMapKey;
 
-    const apiConfig = await prisma.apiConfig.upsert({
+    await prisma.apiConfig.upsert({
       where: { userId: req.userId! },
-      update: encryptedData,
+      update: updateData,
       create: {
         userId: req.userId!,
-        ...encryptedData,
+        ...updateData,
       },
     });
 
@@ -100,7 +80,7 @@ export const updateApiConfig = async (
   }
 };
 
-// 获取解密的 API Key（内部使用）
+// 获取 API Key（内部使用）
 export async function getDecryptedApiKey(
   userId: string,
   keyName: string
@@ -112,12 +92,10 @@ export async function getDecryptedApiKey(
 
     if (!apiConfig) return null;
 
-    const encryptedKey = (apiConfig as any)[keyName];
-    if (!encryptedKey) return null;
-
-    return decrypt(encryptedKey);
+    const key = (apiConfig as any)[keyName];
+    return key || null;
   } catch (error) {
-    console.error('解密 API Key 错误:', error);
+    console.error('获取 API Key 错误:', error);
     return null;
   }
 }
