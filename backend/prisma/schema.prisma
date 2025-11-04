@@ -16,7 +16,86 @@ model User {
   password  String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  
+  // 关联
+  travelPlans TravelPlan[]
+  apiConfig   ApiConfig?
 
   @@map("users")
+}
+
+model ApiConfig {
+  id               String   @id @default(uuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // API Keys (加密存储)
+  openrouterKey    String?
+  xfyunAppId       String?  // 科大讯飞 AppId
+  xfyunApiKey      String?  // 科大讯飞 ApiKey
+  xfyunApiSecret   String?  // 科大讯飞 ApiSecret
+  amapKey          String?  // 高德地图 Key
+  baiduMapKey      String?  // 百度地图 Key
+  
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("api_configs")
+}
+
+model TravelPlan {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  // 基本信息
+  title       String
+  destination String
+  startDate   DateTime
+  endDate     DateTime
+  days        Int
+  budget      Float
+  travelers   Int      @default(1)
+  
+  // 旅行偏好
+  preferences Json?    // {transportation, accommodation, food, activities}
+  
+  // AI 生成的内容
+  itinerary   Json?    // 详细行程
+  suggestions Json?    // AI 建议
+  
+  // 状态
+  status      String   @default("draft") // draft, confirmed, completed
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // 关联
+  expenses    Expense[]
+
+  @@map("travel_plans")
+  @@index([userId])
+}
+
+model Expense {
+  id            String     @id @default(uuid())
+  travelPlanId  String
+  travelPlan    TravelPlan @relation(fields: [travelPlanId], references: [id], onDelete: Cascade)
+  
+  // 费用信息
+  category      String     // transportation, accommodation, food, shopping, entertainment, other
+  amount        Float
+  currency      String     @default("CNY")
+  description   String?
+  date          DateTime
+  
+  // 语音记录相关
+  voiceRecorded Boolean    @default(false)
+  
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@map("expenses")
+  @@index([travelPlanId])
 }
 

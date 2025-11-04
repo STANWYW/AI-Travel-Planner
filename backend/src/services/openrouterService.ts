@@ -1,0 +1,181 @@
+import axios from 'axios';
+import { getDecryptedApiKey } from '../controllers/apiConfigController';
+
+const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
+
+interface TravelPlanInput {
+  destination: string;
+  days: number;
+  budget: number;
+  travelers: number;
+  preferences?: any;
+}
+
+export async function generateTravelItinerary(
+  userId: string,
+  planInput: TravelPlanInput
+): Promise<any> {
+  try {
+    // 获取用户的 OpenRouter API Key
+    const apiKey = await getDecryptedApiKey(userId, 'openrouterKey');
+    
+    if (!apiKey) {
+      throw new Error('请先在设置中配置 OpenRouter API Key');
+    }
+
+    // 构建 prompt
+    const prompt = `请为我生成一个详细的旅行计划：
+
+目的地：${planInput.destination}
+天数：${planInput.days} 天
+预算：${planInput.budget} 元人民币
+人数：${planInput.travelers} 人
+偏好：${JSON.stringify(planInput.preferences || {})}
+
+请生成包含以下内容的详细行程：
+1. 每日行程安排（景点、活动、用餐）
+2. 交通建议
+3. 住宿推荐
+4. 预算分配建议
+5. 注意事项和实用建议
+
+请以 JSON 格式返回，结构如下：
+{
+  "overview": "行程概述",
+  "dailyItinerary": [
+    {
+      "day": 1,
+      "activities": [
+        {"time": "09:00", "activity": "活动名称", "location": "地点", "cost": 100}
+      ],
+      "meals": {
+        "breakfast": "早餐建议",
+        "lunch": "午餐建议",
+        "dinner": "晚餐建议"
+      },
+      "accommodation": "住宿建议"
+    }
+  ],
+  "transportation": {
+    "overview": "交通概述",
+    "options": ["选项1", "选项2"]
+  },
+  "budgetBreakdown": {
+    "transportation": 2000,
+    "accommodation": 3000,
+    "food": 2000,
+    "activities": 2000,
+    "other": 1000
+  },
+  "tips": ["建议1", "建议2"]
+}`;
+
+    const response = await axios.post(
+      OPENROUTER_API_URL,
+      {
+        model: 'anthropic/claude-3.5-sonnet', // 可以让用户选择模型
+        messages: [
+          {
+            role: 'system',
+            content: '你是一个专业的旅行规划助手，擅长根据用户需求生成详细的旅行计划。'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': process.env.APP_URL || 'http://localhost',
+          'X-Title': 'AI Travel Planner',
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    const content = response.data.choices[0].message.content;
+    
+    // 尝试解析 JSON 响应
+    try {
+      // 提取 JSON 部分（可能被包裹在 markdown 代码块中）
+      const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/) || content.match(/{[\s\S]*}/);
+      if (jsonMatch) {
+        const jsonStr = jsonMatch[1] || jsonMatch[0];
+        return JSON.parse(jsonStr);
+      }
+      return { rawContent: content };
+    } catch (parseError) {
+      return { rawContent: content };
+    }
+  } catch (error: any) {
+    console.error('OpenRouter API 错误:', error.response?.data || error.message);
+    throw new Error(
+      error.response?.data?.error?.message || 
+      '生成行程失败，请检查 API Key 是否正确'
+    );
+  }
+}
+
+// 生成预算建议
+export async function generateBudgetSuggestion(
+  userId: string,
+  destination: string,
+  days: number,
+  travelers: number
+): Promise<any> {
+  try {
+    const apiKey = await getDecryptedApiKey(userId, 'openrouterKey');
+    
+    if (!apiKey) {
+      throw new Error('请先在设置中配置 OpenRouter API Key');
+    }
+
+    const prompt = `请为以下旅行生成预算建议：
+
+目的地：${destination}
+天数：${days} 天
+人数：${travelers} 人
+
+请提供详细的预算建议，包括：
+1. 交通费用（往返+当地交通）
+2. 住宿费用（不同档次）
+3. 餐饮费用
+4. 景点门票
+5. 其他开销
+
+请以 JSON 格式返回。`;
+
+    const response = await axios.post(
+      OPENROUTER_API_URL,
+      {
+        model: 'anthropic/claude-3.5-sonnet',
+        messages: [
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.5,
+        max_tokens: 2000,
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': process.env.APP_URL || 'http://localhost',
+          'X-Title': 'AI Travel Planner',
+          'Content-Type': 'application/json',
+        },
+      }
+    );
+
+    return response.data.choices[0].message.content;
+  } catch (error: any) {
+    console.error('生成预算建议错误:', error);
+    throw new Error('生成预算建议失败');
+  }
+}
+
