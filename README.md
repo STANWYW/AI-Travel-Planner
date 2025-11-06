@@ -89,60 +89,50 @@ AITravelPlanner/
 
 ## 🚀 快速开始
 
-### 方式一：一键启动脚本（最简单）⚡
+### 方式一：Docker 单容器部署（推荐）✅
+
+**一键启动，前后端打包在一个容器中！**
 
 ```bash
 # 1. 克隆项目
-git clone <repository-url>
-cd AITravelPlanner
+git clone https://github.com/STANWYW/AI-Travel-Planner.git
+cd AI-Travel-Planner
 
-# 2. 运行启动脚本
-bash START_APP.sh
+# 2. 启动所有服务（单容器）
+docker-compose up -d --build
 ```
 
-启动脚本会自动：
-- 启动 Docker 后端和数据库
-- 安装前端依赖（如果需要）
-- 启动前端开发服务器
+**首次构建需要 5-10 分钟**（包含 npm install），请耐心等待。
 
-访问：
-- 前端: http://localhost:5173
-- 后端 API: http://localhost:3000
+**访问应用**：
+- **前端**: http://localhost
+- **后端 API**: http://localhost/api
+- **健康检查**: http://localhost/health
 
-### 方式二：手动启动
+**服务说明**：
+- ✅ 单容器部署：前后端打包在一个容器中
+- ✅ 自动迁移：首次启动自动运行数据库迁移
+- ✅ Nginx 反向代理：统一入口，自动路由
 
-#### 步骤 1：启动后端和数据库
+> 💡 **详细说明**：查看 `DEPLOYMENT_SINGLE_CONTAINER.md`
 
-```bash
-docker-compose up -d backend postgres
+### 方式二：本地开发模式（开发推荐）
 
-# 验证后端
-curl http://localhost:3000/health
-```
-
-#### 步骤 2：启动前端
+**后端 Docker，前端本地运行**
 
 ```bash
+# 1. 启动后端和数据库
+docker-compose up -d postgres
+# 注意：单容器模式下，需要单独启动后端（见下方说明）
+
+# 2. 本地启动前端
 cd frontend
 npm install
 npm run dev
+# 访问 http://localhost:5173
 ```
 
-前端将在 http://localhost:5173 启动
-
-### 方式三：完全使用 Docker
-
-```bash
-# 取消注释 docker-compose.yml 中的 frontend 服务
-# 然后运行：
-docker-compose up -d --build
-
-# 访问
-# 前端: http://localhost
-# 后端: http://localhost:3000
-```
-
-> ⚠️ **注意**：前端 Docker 构建较慢（3-5分钟），推荐使用方式一或二
+> ⚠️ **注意**：单容器模式下，如需本地开发，需要单独配置后端服务
 
 ---
 
