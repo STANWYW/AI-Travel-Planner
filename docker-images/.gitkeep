@@ -1,0 +1,14 @@
+# 此目录用于存放 Docker 镜像文件
+
+# 镜像文件已添加到 .gitignore（因为太大）
+# 使用以下命令保存镜像：
+# docker save aitravelplanner-backend:latest -o backend.tar
+# docker save aitravelplanner-frontend:latest -o frontend.tar
+
+# 使用以下命令加载镜像：
+# docker load -i backend.tar
+# docker load -i frontend.tar
+
+# 或者使用提供的脚本：
+# bash LOAD_IMAGES.sh
+

@@ -43,3 +43,7 @@ coverage/
 *.tmp
 *.temp
 
+# Docker images (too large for git)
+docker-images/*.tar
+docker-images/*.tar.gz
+

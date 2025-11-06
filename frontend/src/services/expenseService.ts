@@ -1,31 +1,63 @@
 import api from './api';
-import { Expense } from './travelPlanService';
 
-export interface CreateExpenseData {
+export interface Expense {
+  id: string;
+  travelPlanId: string;
   category: string;
   amount: number;
-  currency?: string;
+  currency: string;
   description?: string;
   date: string;
-  voiceRecorded?: boolean;
+  voiceRecorded: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export const getExpenses = async (travelPlanId: string): Promise<Expense[]> => {
-  const response = await api.get(`/api/travel-plans/${travelPlanId}/expenses`);
-  return response.data.expenses;
-};
+export interface ExpenseStatistics {
+  total: number;
+  count: number;
+  byCategory: Record<string, number>;
+  remaining: number;
+}
 
-export const createExpense = async (travelPlanId: string, data: CreateExpenseData): Promise<Expense> => {
-  const response = await api.post(`/api/travel-plans/${travelPlanId}/expenses`, data);
-  return response.data.expense;
-};
+export const expenseService = {
+  // 添加费用
+  add: async (
+    travelPlanId: string,
+    data: {
+      category: string;
+      amount: number;
+      currency?: string;
+      description?: string;
+      date: string;
+      voiceRecorded?: boolean;
+    }
+  ): Promise<{ expense: Expense }> => {
+    const response = await api.post<{ expense: Expense }>(
+      `/api/travel-plans/${travelPlanId}/expenses`,
+      data
+    );
+    return response.data;
+  },
 
-export const updateExpense = async (expenseId: string, data: Partial<CreateExpenseData>): Promise<Expense> => {
-  const response = await api.put(`/api/expenses/${expenseId}`, data);
-  return response.data.expense;
-};
+  // 获取费用列表和统计
+  getByPlanId: async (
+    travelPlanId: string
+  ): Promise<{ expenses: Expense[]; statistics: ExpenseStatistics }> => {
+    const response = await api.get<{ expenses: Expense[]; statistics: ExpenseStatistics }>(
+      `/api/travel-plans/${travelPlanId}/expenses`
+    );
+    return response.data;
+  },
 
-export const deleteExpense = async (expenseId: string): Promise<void> => {
-  await api.delete(`/api/expenses/${expenseId}`);
-};
+  // 更新费用
+  update: async (id: string, data: Partial<Expense>): Promise<{ expense: Expense }> => {
+    const response = await api.put<{ expense: Expense }>(`/api/expenses/${id}`, data);
+    return response.data;
+  },
 
+  // 删除费用
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/api/expenses/${id}`);
+  },
+};

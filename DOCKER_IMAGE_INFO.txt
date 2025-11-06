@@ -1,0 +1,40 @@
+===========================================
+AI 旅行规划师 - Docker 镜像信息
+===========================================
+
+镜像已保存在 docker-images/ 目录
+
+文件列表：
+---------
+1. backend.tar          (645MB) - 后端服务镜像
+2. frontend.tar         (53MB)  - 前端服务镜像
+3. LOAD_IMAGES.sh       (1.3KB) - 一键加载脚本
+4. README.md            (4.5KB) - 详细使用说明
+
+总大小: 698MB
+
+快速使用：
+---------
+cd docker-images
+bash LOAD_IMAGES.sh
+cd ..
+docker-compose up -d
+
+访问: http://localhost
+
+测试账号：
+---------
+邮箱: test@example.com
+密码: password123
+
+注意事项：
+---------
+1. 镜像文件较大（698MB），已添加到 .gitignore
+2. 建议通过其他方式分发（云存储、镜像仓库）
+3. 或者直接在目标机器上构建：docker-compose build
+
+详细说明请查看：
+- DOCKER_IMAGES_GUIDE.md
+- docker-images/README.md
+
+===========================================

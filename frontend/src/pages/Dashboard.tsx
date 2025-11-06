@@ -31,7 +31,7 @@ const Dashboard: React.FC = () => {
       icon: <PlusOutlined style={{ fontSize: 40, color: '#1890ff' }} />,
       title: '创建旅行计划',
       description: '使用语音或文字输入，快速创建您的旅行计划',
-      action: () => navigate('/create-plan'),
+      action: () => navigate('/plans/create'),
       buttonText: '创建计划',
       color: '#1890ff',
     },

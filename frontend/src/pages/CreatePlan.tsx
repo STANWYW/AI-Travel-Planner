@@ -1,80 +1,65 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Layout,
+  Card,
   Form,
   Input,
-  InputNumber,
   DatePicker,
+  InputNumber,
   Button,
-  Card,
   message,
   Space,
-  Divider,
   Typography,
+  Select,
   Checkbox,
-  Row,
-  Col,
 } from 'antd';
-import { SaveOutlined, RobotOutlined } from '@ant-design/icons';
+import { PlusOutlined, RobotOutlined } from '@ant-design/icons';
+import { travelPlanService, CreateTravelPlanData } from '../services/travelPlanService';
 import dayjs from 'dayjs';
-import { createTravelPlan } from '../services/travelPlanService';
-import VoiceInput from '../components/VoiceInput';
+import customParseFormat from 'dayjs/plugin/customParseFormat';
 
-const { Content } = Layout;
-const { Title, Paragraph } = Typography;
+dayjs.extend(customParseFormat);
+
+const { Title } = Typography;
 const { RangePicker } = DatePicker;
 const { TextArea } = Input;
 
 const CreatePlan: React.FC = () => {
   const [form] = Form.useForm();
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [generating, setGenerating] = useState(false);
 
-  const preferenceOptions = [
-    { label: '美食', value: 'food' },
-    { label: '文化', value: 'culture' },
-    { label: '自然风光', value: 'nature' },
-    { label: '购物', value: 'shopping' },
-    { label: '历史', value: 'history' },
-    { label: '冒险', value: 'adventure' },
-    { label: '放松', value: 'relaxation' },
-    { label: '亲子', value: 'family' },
-  ];
-
-  const handleVoiceResult = (text: string) => {
-    // 将语音识别结果填充到表单
-    // 这里可以使用 AI 来解析语音内容并填充到对应字段
-    // 简化版本：直接显示识别结果
-    message.info(`识别结果：${text}`);
-    
-    // 可以在这里添加逻辑解析语音内容，例如：
-    // "我想去日本，5天，预算1万元"
-    // 然后自动填充到表单相应字段
-  };
-
-  const handleSubmit = async (values: any) => {
+  const onFinish = async (values: any) => {
     setLoading(true);
     try {
-      const { dateRange, ...rest } = values;
-      const startDate = dateRange[0].format('YYYY-MM-DD');
-      const endDate = dateRange[1].format('YYYY-MM-DD');
-      const days = dateRange[1].diff(dateRange[0], 'days') + 1;
-
-      const planData = {
+      const { dateRange, preferences, ...rest } = values;
+      
+      const planData: CreateTravelPlanData = {
         ...rest,
-        startDate,
-        endDate,
-        days,
-        preferences: {
-          interests: values.interests || [],
-          notes: values.notes || '',
-        },
+        startDate: dayjs(dateRange[0]).toISOString(),
+        endDate: dayjs(dateRange[1]).toISOString(),
+        days: dayjs(dateRange[1]).diff(dayjs(dateRange[0]), 'day') + 1,
+        preferences: preferences || {},
       };
 
-      const plan = await createTravelPlan(planData);
+      const { travelPlan } = await travelPlanService.create(planData);
       message.success('旅行计划创建成功！');
-      navigate(`/plans/${plan.id}`);
+
+      // 自动生成行程
+      if (values.autoGenerate) {
+        setGenerating(true);
+        try {
+          await travelPlanService.generateItinerary(travelPlan.id);
+          message.success('AI 行程生成成功！');
+        } catch (error: any) {
+          message.warning('计划已创建，但 AI 生成失败：' + (error.response?.data?.error || '请检查 API Key 配置'));
+        } finally {
+          setGenerating(false);
+        }
+      }
+
+      navigate(`/plans/${travelPlan.id}`);
     } catch (error: any) {
       message.error(error.response?.data?.error || '创建失败，请重试');
     } finally {
@@ -83,145 +68,113 @@ const CreatePlan: React.FC = () => {
   };
 
   return (
-    <Layout style={{ minHeight: '100vh', background: '#f0f2f5' }}>
-      <Content style={{ padding: '24px', maxWidth: 1200, margin: '0 auto', width: '100%' }}>
-        <Card>
+    <div style={{ padding: '24px', maxWidth: 800, margin: '0 auto' }}>
+      <Card>
+        <Space direction="vertical" size="large" style={{ width: '100%' }}>
           <Title level={2}>
-            <RobotOutlined /> 创建旅行计划
+            <PlusOutlined /> 创建旅行计划
           </Title>
-          <Paragraph>
-            填写旅行信息，我们的 AI 将为您生成个性化的旅行路线。
-          </Paragraph>
-
-          <Space style={{ marginBottom: 16 }}>
-            <VoiceInput onResult={handleVoiceResult} />
-            <span style={{ color: '#999' }}>
-              支持语音输入，例如："我想去日本，5天，预算1万元，喜欢美食和动漫，带孩子"
-            </span>
-          </Space>
 
           <Form
             form={form}
             layout="vertical"
-            onFinish={handleSubmit}
+            onFinish={onFinish}
             initialValues={{
               travelers: 1,
-              budget: 5000,
+              autoGenerate: true,
             }}
           >
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="旅行标题"
-                  name="title"
-                  rules={[{ required: true, message: '请输入旅行标题' }]}
-                >
-                  <Input placeholder="例如：日本东京之旅" size="large" />
-                </Form.Item>
-              </Col>
-
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="目的地"
-                  name="destination"
-                  rules={[{ required: true, message: '请输入目的地' }]}
-                >
-                  <Input placeholder="例如：东京" size="large" />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Row gutter={16}>
-              <Col xs={24} md={12}>
-                <Form.Item
-                  label="旅行日期"
-                  name="dateRange"
-                  rules={[{ required: true, message: '请选择旅行日期' }]}
-                >
-                  <RangePicker
-                    style={{ width: '100%' }}
-                    size="large"
-                    disabledDate={(current) => current && current < dayjs().startOf('day')}
-                  />
-                </Form.Item>
-              </Col>
-
-              <Col xs={24} md={6}>
-                <Form.Item
-                  label="预算（元）"
-                  name="budget"
-                  rules={[{ required: true, message: '请输入预算' }]}
-                >
-                  <InputNumber
-                    style={{ width: '100%' }}
-                    size="large"
-                    min={0}
-                    step={1000}
-                    formatter={(value) => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                  />
-                </Form.Item>
-              </Col>
-
-              <Col xs={24} md={6}>
-                <Form.Item
-                  label="同行人数"
-                  name="travelers"
-                  rules={[{ required: true, message: '请输入人数' }]}
-                >
-                  <InputNumber
-                    style={{ width: '100%' }}
-                    size="large"
-                    min={1}
-                    max={20}
-                  />
-                </Form.Item>
-              </Col>
-            </Row>
-
-            <Divider>旅行偏好</Divider>
-
             <Form.Item
-              label="您的兴趣"
-              name="interests"
+              label="计划标题"
+              name="title"
+              rules={[{ required: true, message: '请输入计划标题' }]}
             >
-              <Checkbox.Group options={preferenceOptions} />
+              <Input placeholder="例如：日本东京5日游" size="large" />
             </Form.Item>
 
             <Form.Item
-              label="其他要求"
-              name="notes"
+              label="目的地"
+              name="destination"
+              rules={[{ required: true, message: '请输入目的地' }]}
             >
-              <TextArea
-                rows={4}
-                placeholder="例如：带小孩，需要无障碍设施，对海鲜过敏等..."
+              <Input placeholder="例如：东京" size="large" />
+            </Form.Item>
+
+            <Form.Item
+              label="旅行日期"
+              name="dateRange"
+              rules={[{ required: true, message: '请选择旅行日期' }]}
+            >
+              <RangePicker
+                size="large"
+                style={{ width: '100%' }}
+                format="YYYY-MM-DD"
+                disabledDate={(current) => current && current < dayjs().startOf('day')}
               />
             </Form.Item>
 
+            <Form.Item
+              label="预算（人民币）"
+              name="budget"
+              rules={[{ required: true, message: '请输入预算' }]}
+            >
+              <InputNumber
+                min={0}
+                style={{ width: '100%' }}
+                size="large"
+                placeholder="例如：10000"
+                formatter={(value) => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                parser={(value) => value!.replace(/¥\s?|(,*)/g, '')}
+              />
+            </Form.Item>
+
+            <Form.Item
+              label="同行人数"
+              name="travelers"
+              rules={[{ required: true, message: '请输入人数' }]}
+            >
+              <InputNumber min={1} max={20} size="large" style={{ width: '100%' }} />
+            </Form.Item>
+
+            <Form.Item
+              label="旅行偏好"
+              name="preferences"
+            >
+              <Checkbox.Group>
+                <Space direction="vertical">
+                  <Checkbox value="美食">美食</Checkbox>
+                  <Checkbox value="文化">文化历史</Checkbox>
+                  <Checkbox value="自然">自然风光</Checkbox>
+                  <Checkbox value="购物">购物</Checkbox>
+                  <Checkbox value="娱乐">娱乐活动</Checkbox>
+                  <Checkbox value="亲子">亲子游</Checkbox>
+                </Space>
+              </Checkbox.Group>
+            </Form.Item>
+
+            <Form.Item name="autoGenerate" valuePropName="checked">
+              <Checkbox>
+                <RobotOutlined /> 创建后自动生成 AI 行程（需要配置 OpenRouter API Key）
+              </Checkbox>
+            </Form.Item>
+
             <Form.Item>
-              <Space size="middle">
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  icon={<SaveOutlined />}
-                  size="large"
-                  loading={loading}
-                >
-                  创建计划
-                </Button>
-                <Button
-                  size="large"
-                  onClick={() => navigate('/plans')}
-                >
-                  取消
-                </Button>
-              </Space>
+              <Button
+                type="primary"
+                htmlType="submit"
+                loading={loading || generating}
+                size="large"
+                block
+                icon={<PlusOutlined />}
+              >
+                {generating ? '正在生成 AI 行程...' : '创建计划'}
+              </Button>
             </Form.Item>
           </Form>
-        </Card>
-      </Content>
-    </Layout>
+        </Space>
+      </Card>
+    </div>
   );
 };
 
 export default CreatePlan;
-

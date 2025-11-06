@@ -13,36 +13,42 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - travel-planner-network
 
-  backend:
+  app:
     build:
-      context: ./backend
+      context: .
       dockerfile: Dockerfile
-    container_name: travel-planner-backend
+    container_name: travel-planner-app
     environment:
+      # 数据库配置
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: travel_planner
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/travel_planner?schema=public
+      
+      # 后端配置
       JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       PORT: 3000
       NODE_ENV: production
+      
+      # 应用配置
+      APP_URL: ${APP_URL:-http://localhost}
     ports:
-      - "3000:3000"
+      - "80:80"
     depends_on:
       postgres:
         condition: service_healthy
     restart: unless-stopped
-
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    container_name: travel-planner-frontend
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-    restart: unless-stopped
+    networks:
+      - travel-planner-network
 
 volumes:
   postgres_data:
 
+networks:
+  travel-planner-network:
+    driver: bridge

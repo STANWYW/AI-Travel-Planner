@@ -37,18 +37,18 @@ const App: React.FC = () => {
               }
             />
             <Route
-              path="/create-plan"
-              element={
-                <ProtectedRoute>
-                  <CreatePlan />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/plans"
               element={
                 <ProtectedRoute>
                   <PlanList />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/plans/create"
+              element={
+                <ProtectedRoute>
+                  <CreatePlan />
                 </ProtectedRoute>
               }
             />
