@@ -64,8 +64,6 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
           });
           placeSearch.search(destination);
         });
-
-        setMapLoaded(true);
       };
       document.head.appendChild(script);
     } else {
@@ -91,7 +89,6 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
           },
         });
         local.search(destination);
-        setMapLoaded(true);
       };
       document.head.appendChild(script);
     }
