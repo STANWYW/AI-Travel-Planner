@@ -29,14 +29,18 @@ model ApiConfig {
   userId           String   @unique
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   
+  // AI 提供商配置
+  aiProvider       String?  @default("openrouter") // openrouter 或 deepseek
+  selectedModel    String?  // 用户选择的模型名称
+  
   // API Keys (加密存储)
   openrouterKey    String?
+  deepseekKey      String?  // DeepSeek API Key
   xfyunAppId       String?  // 科大讯飞 AppId
   xfyunApiKey      String?  // 科大讯飞 ApiKey
   xfyunApiSecret   String?  // 科大讯飞 ApiSecret
   amapKey          String?  // 高德地图 Key
   baiduMapKey      String?  // 百度地图 Key
-  aiModel          String?  // 用户选择的 AI 模型
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

@@ -169,16 +169,42 @@ export const generateItinerary = async (
       return;
     }
 
-    // 调用 OpenRouter API 生成行程
-    const { generateTravelItinerary } = await import('../services/openrouterService');
-    
-    const itinerary = await generateTravelItinerary(req.userId!, {
-      destination: travelPlan.destination,
-      days: travelPlan.days,
-      budget: travelPlan.budget,
-      travelers: travelPlan.travelers,
-      preferences: travelPlan.preferences,
+    // 获取用户的 AI 提供商配置
+    const apiConfig = await prisma.apiConfig.findUnique({
+      where: { userId: req.userId! },
+      select: { aiProvider: true, selectedModel: true },
     });
+
+    const aiProvider = apiConfig?.aiProvider || 'openrouter';
+    const selectedModel = apiConfig?.selectedModel;
+
+    let itinerary;
+
+    if (aiProvider === 'deepseek') {
+      // 使用 DeepSeek API
+      const { generateTravelItineraryWithDeepSeek } = await import('../services/deepseekService');
+      itinerary = await generateTravelItineraryWithDeepSeek(
+        req.userId!,
+        {
+          destination: travelPlan.destination,
+          days: travelPlan.days,
+          budget: travelPlan.budget,
+          travelers: travelPlan.travelers,
+          preferences: travelPlan.preferences as any,
+        },
+        selectedModel || 'deepseek-chat'
+      );
+    } else {
+      // 使用 OpenRouter API（默认）
+      const { generateTravelItinerary } = await import('../services/openrouterService');
+      itinerary = await generateTravelItinerary(req.userId!, {
+        destination: travelPlan.destination,
+        days: travelPlan.days,
+        budget: travelPlan.budget,
+        travelers: travelPlan.travelers,
+        preferences: travelPlan.preferences as any,
+      }, selectedModel);
+    }
 
     // 更新旅行计划
     const updated = await prisma.travelPlan.update({

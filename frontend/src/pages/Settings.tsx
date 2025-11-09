@@ -1,15 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, message, Space, Typography, Divider, Spin, Select } from 'antd';
+import { Card, Form, Input, Button, message, Space, Typography, Divider, Spin, Radio, Select } from 'antd';
 import { SettingOutlined, SaveOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { apiConfigService, ApiConfig } from '../services/apiConfigService';
 
 const { Title, Text } = Typography;
+const { Option } = Select;
+
+// OpenRouter 可用模型
+const OPENROUTER_MODELS = [
+  { value: '', label: '自动选择（推荐）' },
+  { value: 'deepseek/deepseek-chat-v3-0324:free', label: 'DeepSeek Chat V3 (免费)' },
+  { value: 'deepseek/deepseek-r1-0528:free', label: 'DeepSeek R1 (免费)' },
+  { value: 'tngtech/deepseek-r1t2-chimera:free', label: 'DeepSeek R1T2 Chimera (免费)' },
+  { value: 'tngtech/deepseek-r1t-chimera:free', label: 'DeepSeek R1T Chimera (免费)' },
+  { value: 'google/gemini-2.0-flash-exp:free', label: 'Google Gemini 2.0 Flash (免费)' },
+];
+
+// DeepSeek 可用模型
+const DEEPSEEK_MODELS = [
+  { value: 'deepseek-chat', label: 'DeepSeek Chat (推荐)' },
+  { value: 'deepseek-reasoner', label: 'DeepSeek Reasoner' },
+  { value: 'deepseek-coder', label: 'DeepSeek Coder' },
+];
 
 const Settings: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(true);
+  const [aiProvider, setAiProvider] = useState<string>('openrouter');
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -20,6 +39,7 @@ const Settings: React.FC = () => {
     try {
       const config = await apiConfigService.get();
       form.setFieldsValue(config);
+      setAiProvider(config.aiProvider || 'openrouter');
     } catch (error) {
       console.error('加载配置失败:', error);
     } finally {
@@ -65,48 +85,65 @@ const Settings: React.FC = () => {
               layout="vertical"
               onFinish={onFinish}
             >
+            <Divider orientation="left">AI 提供商配置</Divider>
+
             <Form.Item
-              label="OpenRouter API Key"
-              name="openrouterKey"
-              tooltip="用于 AI 行程生成和预算分析。获取地址：https://openrouter.ai/"
-              rules={[{ required: true, message: '请输入 OpenRouter API Key' }]}
+              label="选择 AI 提供商"
+              name="aiProvider"
+              rules={[{ required: true, message: '请选择 AI 提供商' }]}
             >
-              <Input.Password
-                placeholder="sk-or-v1-..."
+              <Radio.Group 
+                onChange={(e) => setAiProvider(e.target.value)}
                 size="large"
-              />
+              >
+                <Radio.Button value="openrouter">OpenRouter</Radio.Button>
+                <Radio.Button value="deepseek">DeepSeek</Radio.Button>
+              </Radio.Group>
             </Form.Item>
 
             <Form.Item
-              label="AI 模型选择"
-              name="aiModel"
-              tooltip="选择用于生成旅行计划的 AI 模型。如果选择的模型不可用，系统会自动切换到其他可用模型。"
+              label="选择模型"
+              name="selectedModel"
+              tooltip={aiProvider === 'openrouter' 
+                ? '选择特定模型，或选择"自动选择"让系统自动切换' 
+                : '选择 DeepSeek 模型'}
             >
-              <Select
-                placeholder="选择 AI 模型（留空则自动选择）"
-                size="large"
-                allowClear
-              >
-                <Select.Option value="deepseek/deepseek-chat-v3-0324:free">
-                  DeepSeek Chat V3 (推荐) ⭐
-                </Select.Option>
-                <Select.Option value="deepseek/deepseek-r1-0528:free">
-                  DeepSeek R1
-                </Select.Option>
-                <Select.Option value="tngtech/deepseek-r1t2-chimera:free">
-                  DeepSeek R1T2 Chimera
-                </Select.Option>
-                <Select.Option value="tngtech/deepseek-r1t-chimera:free">
-                  DeepSeek R1T Chimera
-                </Select.Option>
-                <Select.Option value="google/gemini-2.0-flash-exp:free">
-                  Google Gemini 2.0 Flash
-                </Select.Option>
+              <Select size="large" placeholder="选择模型">
+                {(aiProvider === 'openrouter' ? OPENROUTER_MODELS : DEEPSEEK_MODELS).map((model) => (
+                  <Option key={model.value} value={model.value}>
+                    {model.label}
+                  </Option>
+                ))}
               </Select>
             </Form.Item>
-            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: -16, marginBottom: 16 }}>
-              💡 提示：留空则使用智能自动选择（推荐），系统会自动选择最快可用的模型
-            </Text>
+
+            {aiProvider === 'openrouter' && (
+              <Form.Item
+                label="OpenRouter API Key"
+                name="openrouterKey"
+                tooltip="用于 AI 行程生成和预算分析。获取地址：https://openrouter.ai/"
+                rules={[{ required: true, message: '请输入 OpenRouter API Key' }]}
+              >
+                <Input.Password
+                  placeholder="sk-or-v1-..."
+                  size="large"
+                />
+              </Form.Item>
+            )}
+
+            {aiProvider === 'deepseek' && (
+              <Form.Item
+                label="DeepSeek API Key"
+                name="deepseekKey"
+                tooltip="用于 AI 行程生成和预算分析。获取地址：https://platform.deepseek.com/"
+                rules={[{ required: true, message: '请输入 DeepSeek API Key' }]}
+              >
+                <Input.Password
+                  placeholder="sk-..."
+                  size="large"
+                />
+              </Form.Item>
+            )}
 
             <Divider orientation="left">语音识别（可选）</Divider>
 

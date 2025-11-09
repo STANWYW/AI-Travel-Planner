@@ -1,13 +1,15 @@
 import api from './api';
 
 export interface ApiConfig {
+  aiProvider?: string;
+  selectedModel?: string;
   openrouterKey: string;
+  deepseekKey?: string;
   xfyunAppId: string;
   xfyunApiKey: string;
   xfyunApiSecret: string;
   amapKey: string;
   baiduMapKey: string;
-  aiModel?: string; // 用户选择的 AI 模型
 }
 
 export const apiConfigService = {

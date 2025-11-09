@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { getDecryptedApiKey, getUserSelectedModel } from '../controllers/apiConfigController';
+import { getDecryptedApiKey } from '../controllers/apiConfigController';
 
 const OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions';
 
@@ -13,7 +13,8 @@ interface TravelPlanInput {
 
 export async function generateTravelItinerary(
   userId: string,
-  planInput: TravelPlanInput
+  planInput: TravelPlanInput,
+  selectedModel?: string
 ): Promise<any> {
   try {
     // 获取用户的 OpenRouter API Key
@@ -86,9 +87,6 @@ export async function generateTravelItinerary(
   "tips": ["建议1", "建议2"]
 }`;
 
-    // 获取用户选择的模型
-    const userSelectedModel = await getUserSelectedModel(userId);
-    
     // 定义可用的免费模型列表（按优先级排序）
     const defaultModels = [
       'deepseek/deepseek-chat-v3-0324:free',
@@ -98,9 +96,9 @@ export async function generateTravelItinerary(
       'google/gemini-2.0-flash-exp:free',
     ];
 
-    // 如果用户选择了模型，优先使用；否则使用默认列表
-    const models = userSelectedModel 
-      ? [userSelectedModel, ...defaultModels.filter(m => m !== userSelectedModel)]
+    // 如果用户选择了模型，优先使用；否则使用自动切换列表
+    const models = selectedModel 
+      ? [selectedModel, ...defaultModels.filter(m => m !== selectedModel)]
       : defaultModels;
 
     let response;
@@ -206,21 +204,14 @@ export async function generateBudgetSuggestion(
 
 请以 JSON 格式返回。`;
 
-    // 获取用户选择的模型
-    const userSelectedModel = await getUserSelectedModel(userId);
-    
     // 使用相同的模型列表
-    const defaultModels = [
+    const models = [
       'deepseek/deepseek-chat-v3-0324:free',
       'deepseek/deepseek-r1-0528:free',
       'tngtech/deepseek-r1t2-chimera:free',
       'tngtech/deepseek-r1t-chimera:free',
       'google/gemini-2.0-flash-exp:free',
     ];
-
-    const models = userSelectedModel 
-      ? [userSelectedModel, ...defaultModels.filter(m => m !== userSelectedModel)]
-      : defaultModels;
 
     let response;
     let lastError;
