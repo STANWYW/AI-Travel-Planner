@@ -11,9 +11,12 @@ import {
   Space,
   Typography,
   Checkbox,
+  Row,
+  Col,
 } from 'antd';
 import { PlusOutlined, RobotOutlined } from '@ant-design/icons';
 import { travelPlanService, CreateTravelPlanData } from '../services/travelPlanService';
+import VoiceInput from '../components/VoiceInput';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 
@@ -21,6 +24,7 @@ dayjs.extend(customParseFormat);
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
+const { TextArea } = Input;
 
 const CreatePlan: React.FC = () => {
   const [form] = Form.useForm();
@@ -78,6 +82,31 @@ const CreatePlan: React.FC = () => {
             </Button>
           </div>
 
+          <Card 
+            style={{ 
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              border: 'none',
+              marginBottom: 24 
+            }}
+          >
+            <Space direction="vertical" style={{ width: '100%' }}>
+              <Typography.Title level={4} style={{ color: '#fff', margin: 0 }}>
+                🎤 语音快速创建
+              </Typography.Title>
+              <Typography.Text style={{ color: '#fff', opacity: 0.9 }}>
+                说出您的旅行计划，例如："我想去日本，5天，预算1万元，喜欢美食和动漫，带孩子"
+              </Typography.Text>
+              <VoiceInput 
+                onResult={(text) => {
+                  message.success('语音识别成功！正在解析...');
+                  message.info(`识别内容：${text}`);
+                  // 这里可以添加 AI 解析逻辑，自动填充表单
+                }}
+                placeholder="点击开始语音输入"
+              />
+            </Space>
+          </Card>
+
           <Form
             form={form}
             layout="vertical"
@@ -92,7 +121,20 @@ const CreatePlan: React.FC = () => {
               name="title"
               rules={[{ required: true, message: '请输入计划标题' }]}
             >
-              <Input placeholder="例如：日本东京5日游" size="large" />
+              <Row gutter={8}>
+                <Col flex="auto">
+                  <Input placeholder="例如：日本东京5日游" size="large" />
+                </Col>
+                <Col>
+                  <VoiceInput 
+                    onResult={(text) => {
+                      form.setFieldsValue({ title: text });
+                      message.success('标题已填充');
+                    }}
+                    placeholder="语音输入"
+                  />
+                </Col>
+              </Row>
             </Form.Item>
 
             <Form.Item
@@ -100,7 +142,20 @@ const CreatePlan: React.FC = () => {
               name="destination"
               rules={[{ required: true, message: '请输入目的地' }]}
             >
-              <Input placeholder="例如：东京" size="large" />
+              <Row gutter={8}>
+                <Col flex="auto">
+                  <Input placeholder="例如：东京" size="large" />
+                </Col>
+                <Col>
+                  <VoiceInput 
+                    onResult={(text) => {
+                      form.setFieldsValue({ destination: text });
+                      message.success('目的地已填充');
+                    }}
+                    placeholder="语音输入"
+                  />
+                </Col>
+              </Row>
             </Form.Item>
 
             <Form.Item

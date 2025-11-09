@@ -15,12 +15,14 @@ import {
   message,
   Popconfirm,
   Typography,
+  Alert,
 } from 'antd';
-import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
+import { PlusOutlined, DeleteOutlined, AudioOutlined } from '@ant-design/icons';
 import { expenseService, Expense, ExpenseStatistics } from '../services/expenseService';
+import VoiceInput from './VoiceInput';
 import dayjs from 'dayjs';
 
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 interface ExpenseManagerProps {
   travelPlanId: string;
@@ -221,7 +223,18 @@ const ExpenseManager: React.FC<ExpenseManagerProps> = ({ travelPlanId, budget })
           </Form.Item>
 
           <Form.Item name="description" label="描述">
-            <Input.TextArea rows={3} placeholder="费用说明（可选）" />
+            <Space.Compact style={{ width: '100%' }} direction="vertical">
+              <Input.TextArea rows={3} placeholder="费用说明（可选）" />
+              <div style={{ marginTop: 8 }}>
+                <VoiceInput 
+                  onResult={(text) => {
+                    form.setFieldsValue({ description: text });
+                    message.success('描述已填充');
+                  }}
+                  placeholder="语音输入描述"
+                />
+              </div>
+            </Space.Compact>
           </Form.Item>
 
           <Form.Item
@@ -232,9 +245,17 @@ const ExpenseManager: React.FC<ExpenseManagerProps> = ({ travelPlanId, budget })
             <DatePicker style={{ width: '100%' }} />
           </Form.Item>
 
+          <Alert
+            message="💡 语音记录费用"
+            description="您可以使用语音快速记录费用信息，例如：'午餐花了80块' 或 '打车到机场200元'"
+            type="info"
+            showIcon
+            style={{ marginBottom: 16 }}
+          />
+
           <Form.Item>
-            <Button type="primary" htmlType="submit" block>
-              添加
+            <Button type="primary" htmlType="submit" block icon={<AudioOutlined />}>
+              添加费用
             </Button>
           </Form.Item>
         </Form>

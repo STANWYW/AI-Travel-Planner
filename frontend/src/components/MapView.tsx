@@ -43,27 +43,47 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
   const loadMap = (apiKey: string, provider: 'amap' | 'baidu') => {
     if (!mapRef.current) return;
 
+    setLoading(false); // 设置加载完成
+
     if (provider === 'amap') {
       // 高德地图
       const script = document.createElement('script');
       script.src = `https://webapi.amap.com/maps?v=2.0&key=${apiKey}`;
       script.async = true;
       script.onload = () => {
-        // @ts-ignore
-        const map = new AMap.Map(mapRef.current, {
-          zoom: 13,
-          center: [116.397428, 39.90923], // 默认北京，实际应通过地理编码获取目的地坐标
-        });
-
-        // 搜索目的地
-        // @ts-ignore
-        AMap.plugin('AMap.PlaceSearch', () => {
+        if (!mapRef.current) return;
+        try {
           // @ts-ignore
-          const placeSearch = new AMap.PlaceSearch({
-            map: map,
+          const map = new AMap.Map(mapRef.current, {
+            zoom: 13,
+            center: [116.397428, 39.90923], // 默认北京
           });
-          placeSearch.search(destination);
-        });
+
+          // 搜索目的地并定位
+          // @ts-ignore
+          AMap.plugin('AMap.Geocoder', () => {
+            // @ts-ignore
+            const geocoder = new AMap.Geocoder();
+            geocoder.getLocation(destination, (status: string, result: any) => {
+              if (status === 'complete' && result.info === 'OK') {
+                const location = result.geocodes[0].location;
+                map.setCenter(location);
+                // @ts-ignore
+                new AMap.Marker({
+                  position: location,
+                  map: map,
+                  title: destination
+                });
+              }
+            });
+          });
+        } catch (err) {
+          console.error('地图加载失败:', err);
+          setError('地图加载失败');
+        }
+      };
+      script.onerror = () => {
+        setError('地图脚本加载失败');
       };
       document.head.appendChild(script);
     } else {
@@ -74,21 +94,37 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
       // @ts-ignore
       window.initBaiduMap = () => {
         if (!mapRef.current) return;
-        // @ts-ignore
-        const map = new BMap.Map(mapRef.current);
-        const point = new BMap.Point(116.404, 39.915); // 默认北京
-        map.centerAndZoom(point, 13);
-        // 搜索目的地
-        // @ts-ignore
-        const local = new BMap.LocalSearch(map, {
-          onSearchComplete: (results: any) => {
-            if (local.getStatus() === BMAP_STATUS_SUCCESS) {
-              const poi = results.getPoi(0);
-              map.centerAndZoom(poi.point, 13);
+        try {
+          // @ts-ignore
+          const map = new BMap.Map(mapRef.current);
+          map.enableScrollWheelZoom(true);
+          
+          // 地理编码
+          // @ts-ignore
+          const geocoder = new BMap.Geocoder();
+          geocoder.getPoint(destination, (point: any) => {
+            if (point) {
+              map.centerAndZoom(point, 13);
+              // @ts-ignore
+              const marker = new BMap.Marker(point);
+              map.addOverlay(marker);
+              // @ts-ignore
+              marker.setTitle(destination);
+            } else {
+              console.error('百度地图地理编码失败');
+              // 使用默认位置（北京）
+              // @ts-ignore
+              const defaultPoint = new BMap.Point(116.404, 39.915);
+              map.centerAndZoom(defaultPoint, 13);
             }
-          },
-        });
-        local.search(destination);
+          }, destination);
+        } catch (err) {
+          console.error('百度地图加载失败:', err);
+          setError('地图加载失败');
+        }
+      };
+      script.onerror = () => {
+        setError('地图脚本加载失败');
       };
       document.head.appendChild(script);
     }
