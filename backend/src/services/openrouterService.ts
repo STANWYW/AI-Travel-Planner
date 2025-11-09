@@ -86,32 +86,65 @@ export async function generateTravelItinerary(
   "tips": ["建议1", "建议2"]
 }`;
 
-    const response = await axios.post(
-      OPENROUTER_API_URL,
-      {
-        model: 'google/gemini-2.0-flash-exp:free', // Google Gemini 免费模型（更稳定）
-        messages: [
+    // 定义可用的免费模型列表（按优先级排序）
+    const models = [
+      'deepseek/deepseek-chat-v3-0324:free',
+      'deepseek/deepseek-r1-0528:free',
+      'tngtech/deepseek-r1t2-chimera:free',
+      'tngtech/deepseek-r1t-chimera:free',
+      'google/gemini-2.0-flash-exp:free',
+    ];
+
+    let response;
+    let lastError;
+
+    // 尝试每个模型，直到成功
+    for (const model of models) {
+      try {
+        console.log(`尝试使用模型: ${model}`);
+        response = await axios.post(
+          OPENROUTER_API_URL,
           {
-            role: 'system',
-            content: '你是一个专业的旅行规划助手，擅长根据用户需求生成详细的旅行计划。'
+            model,
+            messages: [
+              {
+                role: 'system',
+                content: '你是一个专业的旅行规划助手，擅长根据用户需求生成详细的旅行计划。'
+              },
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            temperature: 0.7,
+            max_tokens: 4000,
           },
           {
-            role: 'user',
-            content: prompt
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'HTTP-Referer': process.env.APP_URL || 'http://localhost',
+              'X-Title': 'AI Travel Planner',
+              'Content-Type': 'application/json',
+            },
           }
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'HTTP-Referer': process.env.APP_URL || 'http://localhost',
-          'X-Title': 'AI Travel Planner',
-          'Content-Type': 'application/json',
-        },
+        );
+        console.log(`✅ 成功使用模型: ${model}`);
+        break; // 成功则跳出循环
+      } catch (error: any) {
+        lastError = error;
+        console.log(`❌ 模型 ${model} 失败:`, error.response?.data?.error?.message || error.message);
+        
+        // 如果不是限流错误，直接抛出
+        if (error.response?.data?.error?.code !== 429) {
+          throw error;
+        }
+        // 否则继续尝试下一个模型
       }
-    );
+    }
+
+    if (!response) {
+      throw lastError || new Error('所有模型都不可用');
+    }
 
     const content = response.data.choices[0].message.content;
     
@@ -165,28 +198,54 @@ export async function generateBudgetSuggestion(
 
 请以 JSON 格式返回。`;
 
-    const response = await axios.post(
-      OPENROUTER_API_URL,
-      {
-        model: 'google/gemini-2.0-flash-exp:free',
-        messages: [
+    // 使用相同的模型列表
+    const models = [
+      'deepseek/deepseek-chat-v3-0324:free',
+      'deepseek/deepseek-r1-0528:free',
+      'tngtech/deepseek-r1t2-chimera:free',
+      'tngtech/deepseek-r1t-chimera:free',
+      'google/gemini-2.0-flash-exp:free',
+    ];
+
+    let response;
+    let lastError;
+
+    for (const model of models) {
+      try {
+        response = await axios.post(
+          OPENROUTER_API_URL,
           {
-            role: 'user',
-            content: prompt
+            model,
+            messages: [
+              {
+                role: 'user',
+                content: prompt
+              }
+            ],
+            temperature: 0.5,
+            max_tokens: 2000,
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${apiKey}`,
+              'HTTP-Referer': process.env.APP_URL || 'http://localhost',
+              'X-Title': 'AI Travel Planner',
+              'Content-Type': 'application/json',
+            },
           }
-        ],
-        temperature: 0.5,
-        max_tokens: 2000,
-      },
-      {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'HTTP-Referer': process.env.APP_URL || 'http://localhost',
-          'X-Title': 'AI Travel Planner',
-          'Content-Type': 'application/json',
-        },
+        );
+        break;
+      } catch (error: any) {
+        lastError = error;
+        if (error.response?.data?.error?.code !== 429) {
+          throw error;
+        }
       }
-    );
+    }
+
+    if (!response) {
+      throw lastError || new Error('所有模型都不可用');
+    }
 
     return response.data.choices[0].message.content;
   } catch (error: any) {

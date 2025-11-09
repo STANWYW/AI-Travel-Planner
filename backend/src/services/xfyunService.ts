@@ -12,7 +12,7 @@ interface XfyunConfig {
 }
 
 /**
- * 生成科大讯飞 WebSocket 连接 URL
+ * 生成科大讯飞 WebSocket 连接 URL（符合官方文档规范）
  */
 function generateXfyunUrl(config: XfyunConfig): string {
   const { appId, apiKey, apiSecret } = config;
@@ -20,8 +20,12 @@ function generateXfyunUrl(config: XfyunConfig): string {
   // 生成 RFC1123 格式的时间戳
   const date = new Date().toUTCString();
   
-  // 构建签名原文
-  const signatureOrigin = `host: iat-api.xfyun.cn\ndate: ${date}\nGET /v2/iat HTTP/1.1`;
+  // API 主机地址
+  const host = 'ws-api.xfyun.cn';
+  const path = '/v2/iat';
+  
+  // 构建签名原文（注意换行符和顺序）
+  const signatureOrigin = `host: ${host}\ndate: ${date}\nGET ${path} HTTP/1.1`;
   
   // 使用 HMAC-SHA256 加密
   const signature = crypto
@@ -35,8 +39,12 @@ function generateXfyunUrl(config: XfyunConfig): string {
   // Base64 编码
   const authorization = Buffer.from(authorizationOrigin).toString('base64');
   
-  // 构建 WebSocket URL
-  const url = `wss://iat-api.xfyun.cn/v2/iat?authorization=${encodeURIComponent(authorization)}&date=${encodeURIComponent(date)}&host=iat-api.xfyun.cn`;
+  // 构建 WebSocket URL（包含 appid 参数）
+  const url = `wss://${host}${path}?authorization=${encodeURIComponent(authorization)}&date=${encodeURIComponent(date)}&host=${host}`;
+  
+  console.log('科大讯飞 WebSocket URL 已生成');
+  console.log('AppID:', appId);
+  console.log('Date:', date);
   
   return url;
 }

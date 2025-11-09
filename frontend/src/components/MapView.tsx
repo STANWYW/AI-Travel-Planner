@@ -43,8 +43,6 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
   const loadMap = (apiKey: string, provider: 'amap' | 'baidu') => {
     if (!mapRef.current) return;
 
-    setLoading(false); // 设置加载完成
-
     if (provider === 'amap') {
       // 高德地图
       const script = document.createElement('script');
@@ -53,6 +51,8 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
       script.onload = () => {
         if (!mapRef.current) return;
         try {
+          setLoading(false); // 脚本加载完成，设置加载完成
+          
           // @ts-ignore
           const map = new AMap.Map(mapRef.current, {
             zoom: 13,
@@ -74,16 +74,20 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
                   map: map,
                   title: destination
                 });
+              } else {
+                console.warn('地理编码失败，使用默认位置');
               }
             });
           });
         } catch (err) {
           console.error('地图加载失败:', err);
           setError('地图加载失败');
+          setLoading(false);
         }
       };
       script.onerror = () => {
         setError('地图脚本加载失败');
+        setLoading(false);
       };
       document.head.appendChild(script);
     } else {
@@ -95,6 +99,8 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
       window.initBaiduMap = () => {
         if (!mapRef.current) return;
         try {
+          setLoading(false); // 脚本加载完成，设置加载完成
+          
           // @ts-ignore
           const map = new BMap.Map(mapRef.current);
           map.enableScrollWheelZoom(true);
@@ -111,7 +117,7 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
               // @ts-ignore
               marker.setTitle(destination);
             } else {
-              console.error('百度地图地理编码失败');
+              console.warn('百度地图地理编码失败，使用默认位置');
               // 使用默认位置（北京）
               // @ts-ignore
               const defaultPoint = new BMap.Point(116.404, 39.915);
@@ -121,10 +127,12 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
         } catch (err) {
           console.error('百度地图加载失败:', err);
           setError('地图加载失败');
+          setLoading(false);
         }
       };
       script.onerror = () => {
         setError('地图脚本加载失败');
+        setLoading(false);
       };
       document.head.appendChild(script);
     }
