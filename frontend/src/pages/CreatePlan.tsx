@@ -13,10 +13,12 @@ import {
   Checkbox,
   Row,
   Col,
+  Modal,
 } from 'antd';
-import { PlusOutlined, RobotOutlined } from '@ant-design/icons';
+import { PlusOutlined, RobotOutlined, CheckCircleOutlined } from '@ant-design/icons';
 import { travelPlanService, CreateTravelPlanData } from '../services/travelPlanService';
 import VoiceInput from '../components/VoiceInput';
+import api from '../services/api';
 import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat';
 
@@ -30,6 +32,88 @@ const CreatePlan: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [generating, setGenerating] = useState(false);
+  const [parsing, setParsing] = useState(false);
+
+  // 处理语音识别结果，自动解析并创建计划
+  const handleVoiceResult = async (text: string) => {
+    if (!text || text.trim().length === 0) {
+      message.warning('语音识别结果为空，请重试');
+      return;
+    }
+
+    setParsing(true);
+    try {
+      message.loading('AI 正在解析语音内容...', 0);
+      
+      // 调用解析接口
+      const parseResponse = await api.post('/api/voice/parse', { text });
+      
+      if (parseResponse.data.success) {
+        const planData = parseResponse.data.planData;
+        
+        // 询问用户是自动创建还是填充表单
+        Modal.confirm({
+          title: '🎉 语音解析成功！',
+          content: (
+            <div style={{ marginTop: 16 }}>
+              <p><strong>目的地：</strong>{planData.destination}</p>
+              <p><strong>天数：</strong>{planData.days} 天</p>
+              <p><strong>预算：</strong>¥{planData.budget}</p>
+              <p><strong>人数：</strong>{planData.travelers} 人</p>
+              <p style={{ marginTop: 12, color: '#666' }}>
+                是否直接创建计划并生成 AI 行程？
+              </p>
+            </div>
+          ),
+          okText: '直接创建',
+          cancelText: '填充表单',
+          onOk: async () => {
+            // 直接创建计划
+            try {
+              message.loading('正在创建计划并生成 AI 行程...', 0);
+              const createResponse = await api.post('/api/voice/create-plan', {
+                text,
+                autoGenerate: true,
+              });
+              
+              if (createResponse.data.success) {
+                message.destroy();
+                message.success('旅行计划创建成功！AI 正在生成详细行程...');
+                navigate(`/plans/${createResponse.data.travelPlan.id}`);
+              }
+            } catch (error: any) {
+              message.destroy();
+              message.error(error.response?.data?.error || '创建失败');
+            }
+          },
+          onCancel: () => {
+            // 填充表单
+            message.destroy();
+            message.success('已填充表单，请检查并确认');
+            
+            // 填充表单字段
+            form.setFieldsValue({
+              title: planData.title,
+              destination: planData.destination,
+              dateRange: [
+                dayjs(planData.startDate),
+                dayjs(planData.endDate),
+              ],
+              budget: planData.budget,
+              travelers: planData.travelers,
+              preferences: planData.preferences?.interests || [],
+            });
+          },
+        });
+      }
+    } catch (error: any) {
+      message.destroy();
+      console.error('解析语音失败:', error);
+      message.error(error.response?.data?.error || 'AI 解析失败，请重试');
+    } finally {
+      setParsing(false);
+    }
+  };
 
   const onFinish = async (values: any) => {
     setLoading(true);
@@ -96,13 +180,14 @@ const CreatePlan: React.FC = () => {
                 说出您的旅行计划，例如："我想去日本，5天，预算1万元，喜欢美食和动漫，带孩子"
               </Typography.Text>
               <VoiceInput 
-                onResult={(text) => {
-                  message.success('语音识别成功！正在解析...');
-                  message.info(`识别内容：${text}`);
-                  // 这里可以添加 AI 解析逻辑，自动填充表单
-                }}
+                onResult={handleVoiceResult}
                 placeholder="点击开始语音输入"
               />
+              {parsing && (
+                <Typography.Text style={{ color: '#fff', opacity: 0.8, fontSize: '12px' }}>
+                  ⏳ AI 正在解析中...
+                </Typography.Text>
+              )}
             </Space>
           </Card>
 
