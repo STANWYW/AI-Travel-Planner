@@ -121,8 +121,7 @@ const CreatePlan: React.FC = () => {
                 style={{ width: '100%' }}
                 size="large"
                 placeholder="例如：10000"
-                formatter={(value) => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={(value) => (value ? Number(value.replace(/¥\s?|(,*)/g, '')) : 0)}
+                prefix="¥"
               />
             </Form.Item>
 
