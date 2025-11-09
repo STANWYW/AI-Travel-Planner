@@ -5,6 +5,7 @@ import authRoutes from './routes/authRoutes';
 import apiConfigRoutes from './routes/apiConfigRoutes';
 import travelPlanRoutes from './routes/travelPlanRoutes';
 import expenseRoutes from './routes/expenseRoutes';
+import voiceRoutes from './routes/voiceRoutes';
 
 dotenv.config();
 
@@ -13,14 +14,15 @@ const PORT = process.env.PORT || 3000;
 
 // 中间件
 app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '50mb' })); // 增加限制以支持音频数据
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // 路由
 app.use('/api/auth', authRoutes);
 app.use('/api/config', apiConfigRoutes);
 app.use('/api/travel-plans', travelPlanRoutes);
 app.use('/api/travel-plans', expenseRoutes);
+app.use('/api/voice', voiceRoutes);
 
 // 健康检查
 app.get('/health', (req, res) => {

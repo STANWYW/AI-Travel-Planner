@@ -32,11 +32,16 @@ export async function generateTravelItinerary(
 人数：${planInput.travelers} 人
 偏好：${JSON.stringify(planInput.preferences || {})}
 
+⚠️ 重要要求：
+1. **必须为每一天安排具体的住宿**（酒店名称、位置、价格区间）
+2. 住宿要根据预算合理安排（经济型/舒适型/豪华型）
+3. 考虑住宿位置的便利性（交通、景点）
+
 请生成包含以下内容的详细行程：
 1. 每日行程安排（景点、活动、用餐）
-2. 交通建议
-3. 住宿推荐
-4. 预算分配建议
+2. **每日住宿安排**（必须详细，包括酒店推荐）
+3. 交通建议（往返交通+当地交通）
+4. 预算分配建议（明确住宿预算）
 5. 注意事项和实用建议
 
 请以 JSON 格式返回，结构如下：
@@ -53,12 +58,18 @@ export async function generateTravelItinerary(
         "lunch": "午餐建议",
         "dinner": "晚餐建议"
       },
-      "accommodation": "住宿建议"
+      "accommodation": {
+        "hotel": "酒店名称/类型",
+        "area": "所在区域",
+        "priceRange": "价格区间",
+        "reason": "推荐理由"
+      }
     }
   ],
   "transportation": {
     "overview": "交通概述",
-    "options": ["选项1", "选项2"]
+    "toDestination": "往返交通建议",
+    "local": "当地交通建议"
   },
   "budgetBreakdown": {
     "transportation": 2000,
@@ -66,6 +77,11 @@ export async function generateTravelItinerary(
     "food": 2000,
     "activities": 2000,
     "other": 1000
+  },
+  "accommodationSummary": {
+    "totalNights": ${planInput.days - 1},
+    "estimatedTotal": "住宿总预算",
+    "recommendations": ["推荐1", "推荐2"]
   },
   "tips": ["建议1", "建议2"]
 }`;

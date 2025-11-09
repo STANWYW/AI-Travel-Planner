@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Button, message, Space, Typography } from 'antd';
 import { AudioOutlined, StopOutlined } from '@ant-design/icons';
 import { apiConfigService } from '../services/apiConfigService';
+import api from '../services/api';
 
 const { Text } = Typography;
 
@@ -62,24 +63,35 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onResult: _onResult, placeholde
   const recognizeAudio = async (audioBlob: Blob) => {
     setRecognizing(true);
     try {
-      await apiConfigService.get();
-      
-      // 这里应该调用科大讯飞 WebSocket API
-      // 由于实现较复杂，这里提供一个简化版本
-      // 实际应该使用 WebSocket 实时传输音频流
-      
-      // 示例：将音频转换为 base64 并发送到后端
+      // 将音频转换为 base64
       const reader = new FileReader();
       reader.onloadend = async () => {
-        // const base64Audio = reader.result as string;
-        
-        // 调用后端语音识别接口（需要实现）
-        // const response = await api.post('/api/voice/recognize', { audio: base64Audio });
-        // onResult(response.data.text);
-        
-        // 临时提示
-        message.warning('语音识别功能需要后端支持，请参考科大讯飞文档实现 WebSocket 连接');
-        setRecognizing(false);
+        try {
+          const base64Data = reader.result as string;
+          // 移除 data URL 前缀，只保留 base64 数据
+          const base64Audio = base64Data.split(',')[1];
+
+          // 调用后端语音识别接口
+          const response = await api.post('/api/voice/recognize', { 
+            audioBase64: base64Audio 
+          });
+
+          if (response.data.success) {
+            _onResult(response.data.text);
+            message.success('语音识别完成！');
+          } else {
+            throw new Error(response.data.error || '识别失败');
+          }
+        } catch (error: any) {
+          console.error('语音识别失败:', error);
+          if (error.response?.data?.error) {
+            message.error(error.response.data.error);
+          } else {
+            message.error('语音识别失败，请检查网络连接和 API 配置');
+          }
+        } finally {
+          setRecognizing(false);
+        }
       };
       reader.readAsDataURL(audioBlob);
     } catch (error) {
