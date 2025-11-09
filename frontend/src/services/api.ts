@@ -1,6 +1,10 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+// 在生产环境（Docker）中，使用相对路径让 Nginx 代理
+// 在开发环境中，使用完整的后端地址
+const API_URL = import.meta.env.VITE_API_URL || (
+  import.meta.env.MODE === 'production' ? '' : 'http://localhost:3000'
+);
 
 const api = axios.create({
   baseURL: API_URL,
