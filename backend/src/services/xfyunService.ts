@@ -2,7 +2,7 @@ import WebSocket from 'ws';
 import crypto from 'crypto';
 import { getDecryptedApiKey } from '../controllers/apiConfigController';
 
-// 科大讯飞语音识别 WebSocket API
+// 科大讯飞中英识别大模型 API
 // 参考文档: https://www.xfyun.cn/doc/asr/voicedictation/API.html
 
 interface XfyunConfig {
@@ -12,7 +12,7 @@ interface XfyunConfig {
 }
 
 /**
- * 生成科大讯飞 WebSocket 连接 URL（符合官方文档规范）
+ * 生成科大讯飞中英识别大模型 WebSocket 连接 URL
  * 参考文档: https://www.xfyun.cn/doc/asr/voicedictation/API.html
  */
 function generateXfyunUrl(config: XfyunConfig): string {
@@ -21,12 +21,12 @@ function generateXfyunUrl(config: XfyunConfig): string {
   // 生成 RFC1123 格式的时间戳
   const date = new Date().toUTCString();
   
-  // API 主机地址（IAT 语音听写服务）
-  const host = 'iat-api.xfyun.cn';
-  const path = '/v2/iat';
+  // API 主机地址（中英识别大模型）
+  const host = 'iat.xf-yun.com';
+  const path = '/v1';
   
   // 构建签名原文（严格按照官方文档格式）
-  // 注意：必须是 host、date、request-line 的顺序，且使用 \n 分隔
+  // signature_origin = host: $host\ndate: $date\n$request-line
   const signatureOrigin = `host: ${host}\ndate: ${date}\nGET ${path} HTTP/1.1`;
   
   // 使用 HMAC-SHA256 加密
@@ -42,7 +42,6 @@ function generateXfyunUrl(config: XfyunConfig): string {
   const authorization = Buffer.from(authorizationOrigin).toString('base64');
   
   // 构建 WebSocket URL
-  // 格式: wss://host/path?authorization=xxx&date=xxx&host=xxx
   const url = `wss://${host}${path}?authorization=${encodeURIComponent(authorization)}&date=${encodeURIComponent(date)}&host=${host}`;
   
   console.log('科大讯飞 WebSocket URL 已生成');
@@ -57,7 +56,7 @@ function generateXfyunUrl(config: XfyunConfig): string {
 }
 
 /**
- * 连接科大讯飞语音识别服务
+ * 连接科大讯飞中英识别大模型服务
  */
 export async function connectXfyunIAT(
   userId: string,
@@ -82,95 +81,192 @@ export async function connectXfyunIAT(
     // 创建 WebSocket 连接
     const ws = new WebSocket(url);
 
+    let fullText = '';
+    let isConnected = false;
+
     // 连接建立
     ws.on('open', () => {
       console.log('科大讯飞 IAT WebSocket 连接已建立');
+      isConnected = true;
 
-      // 发送首帧参数
-      const params = {
-        common: {
+      // 发送首帧数据（包含完整参数配置）
+      const firstFrame = {
+        header: {
           app_id: appId,
+          status: 0, // 0: 首帧
         },
-        business: {
-          language: 'zh_cn',
-          domain: 'iat',
-          accent: 'mandarin',
-          vad_eos: 5000, // 静音检测时长
-          dwa: 'wpgs', // 开启动态修正
+        parameter: {
+          iat: {
+            domain: 'slm', // 大模型领域
+            language: 'zh_cn', // 语种
+            accent: 'mandarin', // 方言（普通话）
+            eos: 6000, // 静音多少秒停止识别（6000毫秒）
+            dwa: 'wpgs', // 开启动态修正
+            result: {
+              encoding: 'utf8',
+              compress: 'raw',
+              format: 'json',
+            },
+          },
         },
-        data: {
-          status: 0, // 首帧
-          format: 'audio/L16;rate=16000',
-          encoding: 'raw',
-          audio: '', // 首帧 audio 为空
+        payload: {
+          audio: {
+            encoding: 'raw', // raw 代表 pcm 格式
+            sample_rate: 16000, // 采样率
+            channels: 1, // 声道
+            bit_depth: 16, // 位深
+            seq: 1, // 数据序号
+            status: 0, // 0: 开始
+            audio: '', // 首帧 audio 为空
+          },
         },
       };
 
-      ws.send(JSON.stringify(params));
+      console.log('发送首帧数据...');
+      ws.send(JSON.stringify(firstFrame));
 
       // 发送音频数据
+      let seq = 2; // 从 2 开始
       let frameIndex = 0;
+      
       const sendInterval = setInterval(() => {
+        if (!isConnected) {
+          clearInterval(sendInterval);
+          return;
+        }
+
         if (frameIndex < audioStream.length) {
-          const frame = {
-            data: {
-              status: 1, // 中间帧
-              format: 'audio/L16;rate=16000',
-              encoding: 'raw',
-              audio: audioStream[frameIndex].toString('base64'),
+          // 中间帧数据
+          const middleFrame = {
+            header: {
+              app_id: appId,
+              status: 1, // 1: 中间帧
+            },
+            payload: {
+              audio: {
+                encoding: 'raw',
+                sample_rate: 16000,
+                channels: 1,
+                bit_depth: 16,
+                seq: seq++,
+                status: 1, // 1: 继续
+                audio: audioStream[frameIndex].toString('base64'),
+              },
             },
           };
-          ws.send(JSON.stringify(frame));
+          
+          ws.send(JSON.stringify(middleFrame));
           frameIndex++;
         } else {
           // 发送结束帧
           const endFrame = {
-            data: {
-              status: 2, // 结束帧
-              format: 'audio/L16;rate=16000',
-              encoding: 'raw',
-              audio: '',
+            header: {
+              app_id: appId,
+              status: 2, // 2: 最后一帧
+            },
+            payload: {
+              audio: {
+                encoding: 'raw',
+                sample_rate: 16000,
+                channels: 1,
+                bit_depth: 16,
+                seq: seq++,
+                status: 2, // 2: 结束
+                audio: '', // 最后一帧 audio 为空
+              },
             },
           };
+          
+          console.log('发送结束帧...');
           ws.send(JSON.stringify(endFrame));
           clearInterval(sendInterval);
         }
-      }, 40); // 每 40ms 发送一帧
+      }, 40); // 每 40ms 发送一帧（建议间隔）
     });
 
     // 接收消息
     ws.on('message', (data: Buffer) => {
       try {
         const result = JSON.parse(data.toString());
+        
+        console.log('收到消息:', JSON.stringify(result).substring(0, 200));
 
-        if (result.code !== 0) {
-          onError(`识别错误: ${result.message}`);
+        // 检查错误
+        if (result.header && result.header.code !== 0) {
+          console.error('识别错误:', result.header.message);
+          onError(`识别错误: ${result.header.message || '未知错误'}`);
           ws.close();
           return;
         }
 
         // 解析识别结果
-        if (result.data && result.data.result) {
-          const ws_result = result.data.result.ws;
-          let text = '';
+        if (result.payload && result.payload.result) {
+          const resultData = result.payload.result;
           
-          ws_result.forEach((ws_item: any) => {
-            ws_item.cw.forEach((cw_item: any) => {
-              text += cw_item.w;
-            });
-          });
+          // text 字段是 base64 编码的 JSON，需要解码
+          if (resultData.text) {
+            try {
+              const decodedText = Buffer.from(resultData.text, 'base64').toString('utf8');
+              const textData = JSON.parse(decodedText);
+              
+              console.log('解析后的文本数据:', JSON.stringify(textData).substring(0, 200));
+              
+              // 提取识别文本
+              if (textData.ws && Array.isArray(textData.ws)) {
+                let text = '';
+                
+                textData.ws.forEach((ws_item: any) => {
+                  if (ws_item.cw && Array.isArray(ws_item.cw)) {
+                    ws_item.cw.forEach((cw_item: any) => {
+                      if (cw_item.w) {
+                        text += cw_item.w;
+                      }
+                    });
+                  }
+                });
 
-          // 判断是否为最终结果
-          const isFinal = result.data.status === 2;
-          onResult(text, isFinal);
-
-          if (isFinal) {
-            ws.close();
+                if (text) {
+                  console.log('识别文本:', text);
+                  
+                  // 判断是否为最终结果
+                  const isFinal = resultData.status === 2 || textData.ls === true;
+                  
+                  if (isFinal) {
+                    // 最终结果：追加或替换
+                    if (resultData.pgs === 'rpl') {
+                      // 替换前面的结果
+                      fullText = text;
+                    } else {
+                      // 追加到前面的结果
+                      fullText += text;
+                    }
+                    onResult(fullText, true);
+                    console.log('最终识别结果:', fullText);
+                    ws.close();
+                  } else {
+                    // 中间结果
+                    if (resultData.pgs === 'rpl') {
+                      // 替换前面的结果
+                      fullText = text;
+                    } else {
+                      // 追加到前面的结果
+                      fullText += text;
+                    }
+                    onResult(fullText, false);
+                  }
+                }
+              }
+            } catch (decodeError) {
+              console.error('解码识别结果失败:', decodeError);
+            }
           }
+        } else if (result.header && result.header.status === 0) {
+          // 首帧响应，表示连接成功
+          console.log('连接成功，开始接收识别结果');
         }
       } catch (error) {
         console.error('解析识别结果失败:', error);
-        onError('解析识别结果失败');
+        console.error('原始数据:', data.toString().substring(0, 500));
       }
     });
 
@@ -183,7 +279,8 @@ export async function connectXfyunIAT(
         statusCode: error.statusCode,
       });
       
-      // 401 错误通常是认证失败
+      isConnected = false;
+      
       if (error.message?.includes('401') || error.statusCode === 401) {
         onError('认证失败 (401): 请检查 API Key、API Secret 和 AppID 是否正确');
       } else {
@@ -197,7 +294,15 @@ export async function connectXfyunIAT(
       console.log('关闭代码:', code);
       console.log('关闭原因:', reason.toString());
       
-      if (code === 1006) {
+      isConnected = false;
+      
+      if (code === 1005) {
+        // 1005: 没有收到关闭帧，连接异常关闭
+        // 可能是没有发送数据或数据格式错误
+        if (!fullText) {
+          onError('连接异常关闭，未收到识别结果。请检查音频数据是否正确发送');
+        }
+      } else if (code === 1006) {
         // 异常关闭
         onError('连接异常关闭，可能是认证失败或网络问题');
       }
@@ -220,12 +325,16 @@ export async function recognizeAudioBase64(
       // 将 base64 转换为 Buffer
       const audioBuffer = Buffer.from(audioBase64, 'base64');
       
-      // 分片处理（每片约 1280 字节）
+      console.log('音频数据大小:', audioBuffer.length, '字节');
+      
+      // 分片处理（每片约 1280 字节，对应 40ms 的 16kHz 16bit 单声道音频）
       const chunkSize = 1280;
       const audioStream: Buffer[] = [];
       for (let i = 0; i < audioBuffer.length; i += chunkSize) {
         audioStream.push(audioBuffer.slice(i, i + chunkSize));
       }
+
+      console.log('音频分片数量:', audioStream.length);
 
       let fullText = '';
 
@@ -233,12 +342,14 @@ export async function recognizeAudioBase64(
         userId,
         audioStream,
         (text, isFinal) => {
-          fullText += text;
+          fullText = text;
           if (isFinal) {
+            console.log('识别完成，最终结果:', fullText);
             resolve(fullText);
           }
         },
         (error) => {
+          console.error('识别失败:', error);
           reject(new Error(error));
         }
       );
@@ -247,4 +358,3 @@ export async function recognizeAudioBase64(
     }
   });
 }
-
