@@ -15,7 +15,7 @@ import {
   Col,
   Modal,
 } from 'antd';
-import { PlusOutlined, RobotOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { PlusOutlined, RobotOutlined } from '@ant-design/icons';
 import { travelPlanService, CreateTravelPlanData } from '../services/travelPlanService';
 import VoiceInput from '../components/VoiceInput';
 import api from '../services/api';
