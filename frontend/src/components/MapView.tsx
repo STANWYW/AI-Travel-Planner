@@ -14,7 +14,6 @@ interface MapViewProps {
 
 const MapView: React.FC<MapViewProps> = ({ destination }) => {
   const mapRef = useRef<HTMLDivElement>(null);
-  const [mapLoaded, setMapLoaded] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
