@@ -24,7 +24,6 @@ dayjs.extend(customParseFormat);
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
-const { TextArea } = Input;
 
 const CreatePlan: React.FC = () => {
   const [form] = Form.useForm();

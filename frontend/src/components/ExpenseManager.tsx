@@ -22,7 +22,7 @@ import { expenseService, Expense, ExpenseStatistics } from '../services/expenseS
 import VoiceInput from './VoiceInput';
 import dayjs from 'dayjs';
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 interface ExpenseManagerProps {
   travelPlanId: string;
