@@ -146,7 +146,7 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
   };
 
   // 初始化高德地图的辅助函数
-  const initializeAmapMap = (apiKey: string) => {
+  const initializeAmapMap = (_apiKey: string) => {
     if (!mapRef.current) return;
     
     try {
