@@ -36,6 +36,7 @@ model ApiConfig {
   xfyunApiSecret   String?  // 科大讯飞 ApiSecret
   amapKey          String?  // 高德地图 Key
   baiduMapKey      String?  // 百度地图 Key
+  aiModel          String?  // 用户选择的 AI 模型
   
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt

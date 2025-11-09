@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, message, Space, Typography, Divider, Spin } from 'antd';
+import { Card, Form, Input, Button, message, Space, Typography, Divider, Spin, Select } from 'antd';
 import { SettingOutlined, SaveOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { apiConfigService, ApiConfig } from '../services/apiConfigService';
@@ -76,6 +76,37 @@ const Settings: React.FC = () => {
                 size="large"
               />
             </Form.Item>
+
+            <Form.Item
+              label="AI 模型选择"
+              name="aiModel"
+              tooltip="选择用于生成旅行计划的 AI 模型。如果选择的模型不可用，系统会自动切换到其他可用模型。"
+            >
+              <Select
+                placeholder="选择 AI 模型（留空则自动选择）"
+                size="large"
+                allowClear
+              >
+                <Select.Option value="deepseek/deepseek-chat-v3-0324:free">
+                  DeepSeek Chat V3 (推荐) ⭐
+                </Select.Option>
+                <Select.Option value="deepseek/deepseek-r1-0528:free">
+                  DeepSeek R1
+                </Select.Option>
+                <Select.Option value="tngtech/deepseek-r1t2-chimera:free">
+                  DeepSeek R1T2 Chimera
+                </Select.Option>
+                <Select.Option value="tngtech/deepseek-r1t-chimera:free">
+                  DeepSeek R1T Chimera
+                </Select.Option>
+                <Select.Option value="google/gemini-2.0-flash-exp:free">
+                  Google Gemini 2.0 Flash
+                </Select.Option>
+              </Select>
+            </Form.Item>
+            <Text type="secondary" style={{ fontSize: 12, display: 'block', marginTop: -16, marginBottom: 16 }}>
+              💡 提示：留空则使用智能自动选择（推荐），系统会自动选择最快可用的模型
+            </Text>
 
             <Divider orientation="left">语音识别（可选）</Divider>
 

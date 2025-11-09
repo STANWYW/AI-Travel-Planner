@@ -22,11 +22,12 @@ export const getApiConfig = async (
         xfyunApiSecret: '',
         amapKey: '',
         baiduMapKey: '',
+        aiModel: '',
       });
       return;
     }
 
-    // 解密返回（仅返回是否配置，不返回完整 key）
+    // 返回配置（aiModel 返回实际值，其他返回是否配置）
     res.json({
       openrouterKey: apiConfig.openrouterKey ? '已配置' : '',
       xfyunAppId: apiConfig.xfyunAppId ? '已配置' : '',
@@ -34,6 +35,7 @@ export const getApiConfig = async (
       xfyunApiSecret: apiConfig.xfyunApiSecret ? '已配置' : '',
       amapKey: apiConfig.amapKey ? '已配置' : '',
       baiduMapKey: apiConfig.baiduMapKey ? '已配置' : '',
+      aiModel: apiConfig.aiModel || '',
     });
   } catch (error) {
     console.error('获取 API 配置错误:', error);
@@ -53,6 +55,7 @@ export const updateApiConfig = async (
       xfyunApiSecret,
       amapKey,
       baiduMapKey,
+      aiModel,
     } = req.body;
 
     // 直接存储（演示版本）
@@ -63,6 +66,7 @@ export const updateApiConfig = async (
     if (xfyunApiSecret !== undefined) updateData.xfyunApiSecret = xfyunApiSecret;
     if (amapKey !== undefined) updateData.amapKey = amapKey;
     if (baiduMapKey !== undefined) updateData.baiduMapKey = baiduMapKey;
+    if (aiModel !== undefined) updateData.aiModel = aiModel;
 
     await prisma.apiConfig.upsert({
       where: { userId: req.userId! },
@@ -96,6 +100,24 @@ export async function getDecryptedApiKey(
     return key || null;
   } catch (error) {
     console.error('获取 API Key 错误:', error);
+    return null;
+  }
+}
+
+// 获取用户选择的 AI 模型
+export async function getUserSelectedModel(
+  userId: string
+): Promise<string | null> {
+  try {
+    const apiConfig = await prisma.apiConfig.findUnique({
+      where: { userId },
+    });
+
+    if (!apiConfig) return null;
+
+    return apiConfig.aiModel || null;
+  } catch (error) {
+    console.error('获取 AI 模型错误:', error);
     return null;
   }
 }

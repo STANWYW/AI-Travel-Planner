@@ -7,6 +7,7 @@ export interface ApiConfig {
   xfyunApiSecret: string;
   amapKey: string;
   baiduMapKey: string;
+  aiModel?: string; // 用户选择的 AI 模型
 }
 
 export const apiConfigService = {
