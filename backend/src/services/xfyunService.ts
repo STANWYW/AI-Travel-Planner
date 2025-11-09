@@ -13,6 +13,7 @@ interface XfyunConfig {
 
 /**
  * 生成科大讯飞 WebSocket 连接 URL（符合官方文档规范）
+ * 参考文档: https://www.xfyun.cn/doc/asr/voicedictation/API.html
  */
 function generateXfyunUrl(config: XfyunConfig): string {
   const { appId, apiKey, apiSecret } = config;
@@ -20,11 +21,12 @@ function generateXfyunUrl(config: XfyunConfig): string {
   // 生成 RFC1123 格式的时间戳
   const date = new Date().toUTCString();
   
-  // API 主机地址
-  const host = 'ws-api.xfyun.cn';
+  // API 主机地址（IAT 语音听写服务）
+  const host = 'iat-api.xfyun.cn';
   const path = '/v2/iat';
   
-  // 构建签名原文（注意换行符和顺序）
+  // 构建签名原文（严格按照官方文档格式）
+  // 注意：必须是 host、date、request-line 的顺序，且使用 \n 分隔
   const signatureOrigin = `host: ${host}\ndate: ${date}\nGET ${path} HTTP/1.1`;
   
   // 使用 HMAC-SHA256 加密
@@ -39,12 +41,17 @@ function generateXfyunUrl(config: XfyunConfig): string {
   // Base64 编码
   const authorization = Buffer.from(authorizationOrigin).toString('base64');
   
-  // 构建 WebSocket URL（包含 appid 参数）
+  // 构建 WebSocket URL
+  // 格式: wss://host/path?authorization=xxx&date=xxx&host=xxx
   const url = `wss://${host}${path}?authorization=${encodeURIComponent(authorization)}&date=${encodeURIComponent(date)}&host=${host}`;
   
   console.log('科大讯飞 WebSocket URL 已生成');
   console.log('AppID:', appId);
+  console.log('APIKey:', apiKey.substring(0, 10) + '...');
+  console.log('Host:', host);
   console.log('Date:', date);
+  console.log('Signature Origin:', signatureOrigin.replace(/\n/g, '\\n'));
+  console.log('URL:', url.substring(0, 100) + '...');
   
   return url;
 }
@@ -168,14 +175,32 @@ export async function connectXfyunIAT(
     });
 
     // 错误处理
-    ws.on('error', (error) => {
+    ws.on('error', (error: any) => {
       console.error('WebSocket 错误:', error);
-      onError(`WebSocket 错误: ${error.message}`);
+      console.error('错误详情:', {
+        message: error.message,
+        code: error.code,
+        statusCode: error.statusCode,
+      });
+      
+      // 401 错误通常是认证失败
+      if (error.message?.includes('401') || error.statusCode === 401) {
+        onError('认证失败 (401): 请检查 API Key、API Secret 和 AppID 是否正确');
+      } else {
+        onError(`WebSocket 错误: ${error.message}`);
+      }
     });
 
     // 连接关闭
-    ws.on('close', () => {
+    ws.on('close', (code: number, reason: Buffer) => {
       console.log('科大讯飞 IAT WebSocket 连接已关闭');
+      console.log('关闭代码:', code);
+      console.log('关闭原因:', reason.toString());
+      
+      if (code === 1006) {
+        // 异常关闭
+        onError('连接异常关闭，可能是认证失败或网络问题');
+      }
     });
   } catch (error: any) {
     console.error('连接科大讯飞服务失败:', error);

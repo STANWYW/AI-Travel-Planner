@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { getDecryptedApiKey } from '../controllers/apiConfigController';
 
+// DeepSeek API 地址（官方文档：https://api.deepseek.com 或 https://api.deepseek.com/v1）
 const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 // DeepSeek 可用模型列表
