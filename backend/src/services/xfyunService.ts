@@ -123,46 +123,24 @@ export async function connectXfyunIAT(
       };
 
       console.log('发送首帧数据...');
+      console.log('音频数据分片数量:', audioStream.length);
+      console.log('音频数据总大小:', audioStream.reduce((sum, buf) => sum + buf.length, 0), '字节');
+      
       ws.send(JSON.stringify(firstFrame));
 
-      // 发送音频数据
-      let seq = 2; // 从 2 开始
-      let frameIndex = 0;
-      
-      const sendInterval = setInterval(() => {
-        if (!isConnected) {
-          clearInterval(sendInterval);
-          return;
-        }
-
-        if (frameIndex < audioStream.length) {
-          // 中间帧数据
-          const middleFrame = {
-            header: {
-              app_id: appId,
-              status: 1, // 1: 中间帧
-            },
-            payload: {
-              audio: {
-                encoding: 'raw',
-                sample_rate: 16000,
-                channels: 1,
-                bit_depth: 16,
-                seq: seq++,
-                status: 1, // 1: 继续
-                audio: audioStream[frameIndex].toString('base64'),
-              },
-            },
-          };
-          
-          ws.send(JSON.stringify(middleFrame));
-          frameIndex++;
-        } else {
-          // 发送结束帧
+      // 等待一小段时间确保首帧被处理
+      setTimeout(() => {
+        // 发送音频数据
+        let seq = 2; // 从 2 开始
+        let frameIndex = 0;
+        
+        if (audioStream.length === 0) {
+          console.warn('警告: 音频数据为空，直接发送结束帧');
+          // 如果音频数据为空，直接发送结束帧
           const endFrame = {
             header: {
               app_id: appId,
-              status: 2, // 2: 最后一帧
+              status: 2,
             },
             payload: {
               audio: {
@@ -170,18 +148,72 @@ export async function connectXfyunIAT(
                 sample_rate: 16000,
                 channels: 1,
                 bit_depth: 16,
-                seq: seq++,
-                status: 2, // 2: 结束
-                audio: '', // 最后一帧 audio 为空
+                seq: seq,
+                status: 2,
+                audio: '',
               },
             },
           };
-          
-          console.log('发送结束帧...');
           ws.send(JSON.stringify(endFrame));
-          clearInterval(sendInterval);
+          return;
         }
-      }, 40); // 每 40ms 发送一帧（建议间隔）
+        
+        const sendInterval = setInterval(() => {
+          if (!isConnected) {
+            clearInterval(sendInterval);
+            return;
+          }
+
+          if (frameIndex < audioStream.length) {
+            // 中间帧数据
+            const frame = audioStream[frameIndex];
+            const middleFrame = {
+              header: {
+                app_id: appId,
+                status: 1, // 1: 中间帧
+              },
+              payload: {
+                audio: {
+                  encoding: 'raw',
+                  sample_rate: 16000,
+                  channels: 1,
+                  bit_depth: 16,
+                  seq: seq++,
+                  status: 1, // 1: 继续
+                  audio: frame.toString('base64'),
+                },
+              },
+            };
+            
+            console.log(`发送中间帧 ${frameIndex + 1}/${audioStream.length}, seq=${seq - 1}, 大小=${frame.length}字节`);
+            ws.send(JSON.stringify(middleFrame));
+            frameIndex++;
+          } else {
+            // 发送结束帧
+            const endFrame = {
+              header: {
+                app_id: appId,
+                status: 2, // 2: 最后一帧
+              },
+              payload: {
+                audio: {
+                  encoding: 'raw',
+                  sample_rate: 16000,
+                  channels: 1,
+                  bit_depth: 16,
+                  seq: seq++,
+                  status: 2, // 2: 结束
+                  audio: '', // 最后一帧 audio 为空
+                },
+              },
+            };
+            
+            console.log('发送结束帧, seq=', seq - 1);
+            ws.send(JSON.stringify(endFrame));
+            clearInterval(sendInterval);
+          }
+        }, 40); // 每 40ms 发送一帧（建议间隔）
+      }, 100); // 等待 100ms 确保首帧被处理
     });
 
     // 接收消息

@@ -60,43 +60,85 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onResult: _onResult, placeholde
     }
   };
 
-  const recognizeAudio = async (audioBlob: Blob) => {
-    setRecognizing(true);
-    try {
-      // 将音频转换为 base64
+  // 将音频 Blob 转换为 PCM 格式
+  const convertToPCM = async (audioBlob: Blob): Promise<string> => {
+    return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onloadend = async () => {
         try {
-          const base64Data = reader.result as string;
-          // 移除 data URL 前缀，只保留 base64 数据
-          const base64Audio = base64Data.split(',')[1];
-
-          // 调用后端语音识别接口
-          const response = await api.post('/api/voice/recognize', { 
-            audioBase64: base64Audio 
-          });
-
-          if (response.data.success) {
-            _onResult(response.data.text);
-            message.success('语音识别完成！');
-          } else {
-            throw new Error(response.data.error || '识别失败');
+          const arrayBuffer = reader.result as ArrayBuffer;
+          
+          // 使用 AudioContext 解码音频
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+          const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+          
+          // 转换为 16kHz 单声道 PCM
+          const targetSampleRate = 16000;
+          const sourceSampleRate = audioBuffer.sampleRate;
+          const ratio = sourceSampleRate / targetSampleRate;
+          
+          // 获取第一个声道的数据
+          const sourceData = audioBuffer.getChannelData(0);
+          const targetLength = Math.floor(sourceData.length / ratio);
+          const targetData = new Float32Array(targetLength);
+          
+          // 重采样
+          for (let i = 0; i < targetLength; i++) {
+            const sourceIndex = Math.floor(i * ratio);
+            targetData[i] = sourceData[sourceIndex];
           }
-        } catch (error: any) {
-          console.error('语音识别失败:', error);
-          if (error.response?.data?.error) {
-            message.error(error.response.data.error);
-          } else {
-            message.error('语音识别失败，请检查网络连接和 API 配置');
+          
+          // 转换为 16-bit PCM
+          const pcmData = new Int16Array(targetLength);
+          for (let i = 0; i < targetLength; i++) {
+            // 将 -1.0 到 1.0 的浮点数转换为 -32768 到 32767 的整数
+            const s = Math.max(-1, Math.min(1, targetData[i]));
+            pcmData[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
           }
-        } finally {
-          setRecognizing(false);
+          
+          // 转换为 base64
+          const bytes = new Uint8Array(pcmData.buffer);
+          const binary = Array.from(bytes, byte => String.fromCharCode(byte)).join('');
+          const base64 = btoa(binary);
+          
+          resolve(base64);
+        } catch (error) {
+          reject(error);
         }
       };
-      reader.readAsDataURL(audioBlob);
-    } catch (error) {
-      console.error('识别失败:', error);
-      message.error('语音识别失败');
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(audioBlob);
+    });
+  };
+
+  const recognizeAudio = async (audioBlob: Blob) => {
+    setRecognizing(true);
+    try {
+      console.log('音频 Blob 大小:', audioBlob.size, '字节');
+      
+      // 将音频转换为 PCM 格式
+      const base64Audio = await convertToPCM(audioBlob);
+      console.log('PCM 数据大小:', base64Audio.length, '字符');
+
+      // 调用后端语音识别接口
+      const response = await api.post('/api/voice/recognize', { 
+        audioBase64: base64Audio 
+      });
+
+      if (response.data.success) {
+        _onResult(response.data.text);
+        message.success('语音识别完成！');
+      } else {
+        throw new Error(response.data.error || '识别失败');
+      }
+    } catch (error: any) {
+      console.error('语音识别失败:', error);
+      if (error.response?.data?.error) {
+        message.error(error.response.data.error);
+      } else {
+        message.error('语音识别失败，请检查网络连接和 API 配置');
+      }
+    } finally {
       setRecognizing(false);
     }
   };
