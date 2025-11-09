@@ -4,6 +4,10 @@ import { apiConfigService } from '../services/apiConfigService';
 
 const { Title, Paragraph } = Typography;
 
+// 百度地图类型声明
+declare const BMap: any;
+declare const BMAP_STATUS_SUCCESS: any;
+
 interface MapViewProps {
   destination: string;
 }

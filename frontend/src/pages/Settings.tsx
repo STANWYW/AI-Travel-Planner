@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Card, Form, Input, Button, message, Space, Typography, Divider } from 'antd';
+import { Card, Form, Input, Button, message, Space, Typography, Divider, Spin } from 'antd';
 import { SettingOutlined, SaveOutlined } from '@ant-design/icons';
 import { apiConfigService, ApiConfig } from '../services/apiConfigService';
-import { useAuth } from '../contexts/AuthContext';
 
 const { Title, Text } = Typography;
 
@@ -10,7 +9,6 @@ const Settings: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(true);
-  const { user } = useAuth();
 
   useEffect(() => {
     loadConfig();
@@ -54,12 +52,12 @@ const Settings: React.FC = () => {
 
           <Divider />
 
-          <Form
-            form={form}
-            layout="vertical"
-            onFinish={onFinish}
-            loading={loadingConfig}
-          >
+          <Spin spinning={loadingConfig}>
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={onFinish}
+            >
             <Form.Item
               label="OpenRouter API Key"
               name="openrouterKey"
@@ -127,6 +125,7 @@ const Settings: React.FC = () => {
               </Button>
             </Form.Item>
           </Form>
+          </Spin>
         </Space>
       </Card>
     </div>

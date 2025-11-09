@@ -14,14 +14,12 @@ import {
 } from 'antd';
 import { PlusOutlined, SearchOutlined, CalendarOutlined, DollarOutlined } from '@ant-design/icons';
 import { travelPlanService, TravelPlan } from '../services/travelPlanService';
-import { useAuth } from '../contexts/AuthContext';
 
 const { Title } = Typography;
 const { Search } = Input;
 
 const PlanList: React.FC = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [plans, setPlans] = useState<TravelPlan[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');

@@ -10,7 +10,6 @@ import {
   message,
   Space,
   Typography,
-  Select,
   Checkbox,
 } from 'antd';
 import { PlusOutlined, RobotOutlined } from '@ant-design/icons';
@@ -22,7 +21,6 @@ dayjs.extend(customParseFormat);
 
 const { Title } = Typography;
 const { RangePicker } = DatePicker;
-const { TextArea } = Input;
 
 const CreatePlan: React.FC = () => {
   const [form] = Form.useForm();
@@ -124,7 +122,7 @@ const CreatePlan: React.FC = () => {
                 size="large"
                 placeholder="例如：10000"
                 formatter={(value) => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={(value) => value!.replace(/¥\s?|(,*)/g, '')}
+                parser={(value) => (value ? value.replace(/¥\s?|(,*)/g, '') : '')}
               />
             </Form.Item>
 

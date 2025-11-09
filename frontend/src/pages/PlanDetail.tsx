@@ -11,12 +11,10 @@ import {
   Tabs,
   Timeline,
   Descriptions,
-  Divider,
 } from 'antd';
 import {
   ArrowLeftOutlined,
   RobotOutlined,
-  EditOutlined,
   DeleteOutlined,
   DollarOutlined,
 } from '@ant-design/icons';

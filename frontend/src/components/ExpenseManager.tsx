@@ -14,10 +14,13 @@ import {
   Progress,
   message,
   Popconfirm,
+  Typography,
 } from 'antd';
 import { PlusOutlined, DeleteOutlined } from '@ant-design/icons';
 import { expenseService, Expense, ExpenseStatistics } from '../services/expenseService';
 import dayjs from 'dayjs';
+
+const { Title } = Typography;
 
 interface ExpenseManagerProps {
   travelPlanId: string;
@@ -153,8 +156,9 @@ const ExpenseManager: React.FC<ExpenseManagerProps> = ({ travelPlanId, budget })
 
           <Progress
             percent={Math.min(percent, 100)}
-            status={percent > 100 ? 'exception' : percent > 80 ? 'warning' : 'active'}
+            status={percent > 100 ? 'exception' : 'active'}
             format={() => `${percent.toFixed(1)}%`}
+            strokeColor={percent > 80 ? '#faad14' : undefined}
           />
         </Space>
       </Card>

@@ -10,7 +10,7 @@ interface VoiceInputProps {
   placeholder?: string;
 }
 
-const VoiceInput: React.FC<VoiceInputProps> = ({ onResult, placeholder = '点击开始录音' }) => {
+const VoiceInput: React.FC<VoiceInputProps> = ({ onResult: _onResult, placeholder = '点击开始录音' }) => {
   const [recording, setRecording] = useState(false);
   const [recognizing, setRecognizing] = useState(false);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -62,7 +62,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onResult, placeholder = '点击
   const recognizeAudio = async (audioBlob: Blob) => {
     setRecognizing(true);
     try {
-      const config = await apiConfigService.get();
+      const _config = await apiConfigService.get();
       
       // 这里应该调用科大讯飞 WebSocket API
       // 由于实现较复杂，这里提供一个简化版本
@@ -71,7 +71,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onResult, placeholder = '点击
       // 示例：将音频转换为 base64 并发送到后端
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const base64Audio = reader.result as string;
+        const _base64Audio = reader.result as string;
         
         // 调用后端语音识别接口（需要实现）
         // const response = await api.post('/api/voice/recognize', { audio: base64Audio });
