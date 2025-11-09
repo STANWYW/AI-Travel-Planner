@@ -1,0 +1,55 @@
+services:
+  postgres:
+    image: swr.cn-north-4.myhuaweicloud.com/ddn-k8s/docker.io/postgres:16-alpine
+    container_name: travel-planner-db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: travel_planner
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - travel-planner-network
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.china
+    container_name: travel-planner-app
+    environment:
+      # 数据库配置
+      POSTGRES_HOST: postgres
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: travel_planner
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/travel_planner?schema=public
+      
+      # 后端配置
+      JWT_SECRET: ${JWT_SECRET:-your-secret-key-change-this-in-production}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      PORT: 3000
+      NODE_ENV: production
+      
+      # 应用配置
+      APP_URL: ${APP_URL:-http://localhost}
+    ports:
+      - "80:80"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - travel-planner-network
+
+volumes:
+  postgres_data:
+
+networks:
+  travel-planner-network:
+    driver: bridge
+
