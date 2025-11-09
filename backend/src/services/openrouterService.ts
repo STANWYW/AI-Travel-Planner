@@ -73,7 +73,7 @@ export async function generateTravelItinerary(
     const response = await axios.post(
       OPENROUTER_API_URL,
       {
-        model: 'anthropic/claude-3.5-sonnet', // 可以让用户选择模型
+        model: 'qwen/qwen3-235b-a22b:free', // Qwen 3 235B 免费模型
         messages: [
           {
             role: 'system',
@@ -152,7 +152,7 @@ export async function generateBudgetSuggestion(
     const response = await axios.post(
       OPENROUTER_API_URL,
       {
-        model: 'anthropic/claude-3.5-sonnet',
+        model: 'qwen/qwen3-235b-a22b:free',
         messages: [
           {
             role: 'user',
