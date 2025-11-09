@@ -67,13 +67,13 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 COPY nginx.conf /etc/nginx/sites-available/default
 
 # 复制启动脚本
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+COPY docker-start.sh /app/docker-start.sh
+RUN chmod +x /app/docker-start.sh
 
 # 安装 PostgreSQL 客户端（用于健康检查）
 RUN apt-get update -y && apt-get install -y postgresql-client && rm -rf /var/lib/apt/lists/*
 
 EXPOSE 80
 
-CMD ["/app/start.sh"]
+CMD ["/app/docker-start.sh"]
 

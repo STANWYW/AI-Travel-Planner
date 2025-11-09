@@ -78,10 +78,10 @@ COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
 COPY nginx.conf /etc/nginx/sites-available/default
 
 # 复制启动脚本
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+COPY docker-start.sh /app/docker-start.sh
+RUN chmod +x /app/docker-start.sh
 
 EXPOSE 80
 
-CMD ["/app/start.sh"]
+CMD ["/app/docker-start.sh"]
 
