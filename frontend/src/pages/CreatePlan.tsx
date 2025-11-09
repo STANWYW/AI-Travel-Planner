@@ -122,7 +122,7 @@ const CreatePlan: React.FC = () => {
                 size="large"
                 placeholder="例如：10000"
                 formatter={(value) => `¥ ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
-                parser={(value) => (value ? value.replace(/¥\s?|(,*)/g, '') : '')}
+                parser={(value) => (value ? Number(value.replace(/¥\s?|(,*)/g, '')) : 0)}
               />
             </Form.Item>
 

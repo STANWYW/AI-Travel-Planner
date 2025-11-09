@@ -62,7 +62,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onResult: _onResult, placeholde
   const recognizeAudio = async (audioBlob: Blob) => {
     setRecognizing(true);
     try {
-      const _config = await apiConfigService.get();
+      await apiConfigService.get();
       
       // 这里应该调用科大讯飞 WebSocket API
       // 由于实现较复杂，这里提供一个简化版本
@@ -71,7 +71,7 @@ const VoiceInput: React.FC<VoiceInputProps> = ({ onResult: _onResult, placeholde
       // 示例：将音频转换为 base64 并发送到后端
       const reader = new FileReader();
       reader.onloadend = async () => {
-        const _base64Audio = reader.result as string;
+        // const base64Audio = reader.result as string;
         
         // 调用后端语音识别接口（需要实现）
         // const response = await api.post('/api/voice/recognize', { audio: base64Audio });
