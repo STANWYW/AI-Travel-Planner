@@ -73,7 +73,7 @@ export async function generateTravelItinerary(
     const response = await axios.post(
       OPENROUTER_API_URL,
       {
-        model: 'qwen/qwen3-235b-a22b:free', // Qwen 3 235B 免费模型
+        model: 'google/gemini-2.0-flash-exp:free', // Google Gemini 免费模型（更稳定）
         messages: [
           {
             role: 'system',
@@ -152,7 +152,7 @@ export async function generateBudgetSuggestion(
     const response = await axios.post(
       OPENROUTER_API_URL,
       {
-        model: 'qwen/qwen3-235b-a22b:free',
+        model: 'google/gemini-2.0-flash-exp:free',
         messages: [
           {
             role: 'user',

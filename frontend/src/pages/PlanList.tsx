@@ -71,7 +71,12 @@ const PlanList: React.FC = () => {
     <div style={{ padding: '24px', maxWidth: 1200, margin: '0 auto' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Title level={2}>我的旅行计划</Title>
+          <Space direction="vertical">
+            <Title level={2} style={{ margin: 0 }}>我的旅行计划</Title>
+            <Button onClick={() => navigate('/dashboard')} style={{ padding: 0 }} type="link">
+              ← 返回主页
+            </Button>
+          </Space>
           <Button
             type="primary"
             icon={<PlusOutlined />}

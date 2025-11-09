@@ -69,9 +69,14 @@ const CreatePlan: React.FC = () => {
     <div style={{ padding: '24px', maxWidth: 800, margin: '0 auto' }}>
       <Card>
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <Title level={2}>
-            <PlusOutlined /> 创建旅行计划
-          </Title>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Title level={2} style={{ margin: 0 }}>
+              <PlusOutlined /> 创建旅行计划
+            </Title>
+            <Button onClick={() => navigate('/dashboard')}>
+              返回主页
+            </Button>
+          </div>
 
           <Form
             form={form}

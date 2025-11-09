@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Form, Input, Button, message, Space, Typography, Divider, Spin } from 'antd';
 import { SettingOutlined, SaveOutlined } from '@ant-design/icons';
+import { useNavigate } from 'react-router-dom';
 import { apiConfigService, ApiConfig } from '../services/apiConfigService';
 
 const { Title, Text } = Typography;
@@ -9,6 +10,7 @@ const Settings: React.FC = () => {
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(false);
   const [loadingConfig, setLoadingConfig] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadConfig();
@@ -41,13 +43,18 @@ const Settings: React.FC = () => {
     <div style={{ padding: '24px', maxWidth: 800, margin: '0 auto' }}>
       <Card>
         <Space direction="vertical" size="large" style={{ width: '100%' }}>
-          <div>
-            <Title level={2}>
-              <SettingOutlined /> API 配置
-            </Title>
-            <Text type="secondary">
-              配置第三方 API Keys 以启用完整功能。所有密钥仅存储在您的账户中。
-            </Text>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div>
+              <Title level={2} style={{ margin: 0 }}>
+                <SettingOutlined /> API 配置
+              </Title>
+              <Text type="secondary">
+                配置第三方 API Keys 以启用完整功能。所有密钥仅存储在您的账户中。
+              </Text>
+            </div>
+            <Button onClick={() => navigate('/dashboard')}>
+              返回主页
+            </Button>
           </div>
 
           <Divider />

@@ -16,6 +16,8 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     checkApiKey();
@@ -23,13 +25,19 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
 
   const checkApiKey = async () => {
     try {
+      setLoading(true);
       const config = await apiConfigService.get();
       if (config.amapKey || config.baiduMapKey) {
         setHasApiKey(true);
         loadMap(config.amapKey || config.baiduMapKey || '', config.amapKey ? 'amap' : 'baidu');
+      } else {
+        setError('未配置地图 API Key');
+        setLoading(false);
       }
     } catch (error) {
       console.error('检查 API Key 失败:', error);
+      setError('检查 API Key 失败');
+      setLoading(false);
     }
   };
 
@@ -90,7 +98,22 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
     }
   };
 
-  if (!hasApiKey) {
+  // 显示错误信息
+  if (error) {
+    return (
+      <Card>
+        <Alert
+          message="地图加载失败"
+          description={error}
+          type="warning"
+          showIcon
+        />
+      </Card>
+    );
+  }
+
+  // 显示未配置 API Key 提示
+  if (!loading && !hasApiKey) {
     return (
       <Card>
         <Alert
@@ -113,22 +136,27 @@ const MapView: React.FC<MapViewProps> = ({ destination }) => {
     );
   }
 
+  // 地图加载中或已加载
   return (
     <Card>
       <Title level={4}>目的地：{destination}</Title>
-      <div
-        ref={mapRef}
-        style={{
-          width: '100%',
-          height: '500px',
-          border: '1px solid #d9d9d9',
-          borderRadius: '4px',
-        }}
-      />
-      {!mapLoaded && (
-        <div style={{ textAlign: 'center', padding: '20px' }}>
-          正在加载地图...
+      {loading ? (
+        <div style={{ textAlign: 'center', padding: '100px 20px' }}>
+          <p>地图功能正在开发中...</p>
+          <p style={{ color: '#999', fontSize: '14px' }}>
+            提示：地图 API 需要完整的 SDK 集成，当前版本已预留接口
+          </p>
         </div>
+      ) : (
+        <div
+          ref={mapRef}
+          style={{
+            width: '100%',
+            height: '500px',
+            border: '1px solid #d9d9d9',
+            borderRadius: '4px',
+          }}
+        />
       )}
     </Card>
   );

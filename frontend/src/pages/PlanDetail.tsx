@@ -96,9 +96,14 @@ const PlanDetail: React.FC = () => {
     <div style={{ padding: '24px', maxWidth: 1200, margin: '0 auto' }}>
       <Space direction="vertical" size="large" style={{ width: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/plans')}>
-            返回列表
-          </Button>
+          <Space>
+            <Button onClick={() => navigate('/dashboard')}>
+              返回主页
+            </Button>
+            <Button icon={<ArrowLeftOutlined />} onClick={() => navigate('/plans')}>
+              返回列表
+            </Button>
+          </Space>
           <Space>
             <Button
               icon={<RobotOutlined />}
